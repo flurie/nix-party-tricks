@@ -1,0 +1,32 @@
+# https://numtide.github.io/devshell
+[[commands]]
+package = "devshell.cli"
+help = "Per project developer environments"
+
+[[commands]]
+package = "deploy-rs"
+name = "deploy"
+help = "deploy Nix anywhere"
+
+[[commands]]
+name = "access_keys_from_csv"
+command = "${PRJ_ROOT}/scripts/access_keys_from_csv.sh"
+help = "credential process helper for aws"
+
+[[env]]
+name = "AWS_USERNAME"
+eval = "$(whoami)"
+
+# for terraform
+[[env]]
+name = "TF_VAR_prj_root"
+eval = "$PRJ_ROOT"
+
+[devshell]
+name = "nix-party-tricks"
+
+packages = [
+  "awscli2",
+  "terraform",
+  "git",
+]

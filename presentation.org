@@ -1,0 +1,175 @@
+#+TITLE:     Nix party tricks
+#+AUTHOR:    Alexander Flurie
+#+EMAIL:     _@flurie.net
+#+DATE:      <2022-07-12 Tue>
+#+DESCRIPTION: Some party tricks you can perform with nix and AWS
+#+KEYWORDS: nix aws ec2 terraform
+#+LANGUAGE:  en
+#+OPTIONS:   H:2 num:t toc:t \n:nil @:t ::t |:t ^:t -:t f:t *:t <:t
+#+OPTIONS:   TeX:t LaTeX:t skip:nil d:nil todo:t pri:nil tags:not-in-toc
+#+INFOJS_OPT: view:nil toc:nil ltoc:t mouse:underline buttons:0 path:https://orgmode.org/org-info.js
+#+EXPORT_SELECT_TAGS: export
+#+EXPORT_EXCLUDE_TAGS: noexport
+#+HTML_LINK_UP:
+#+HTML_LINK_HOME:
+#+startup: beamer
+#+LATEX_CLASS: beamer
+#+LATEX_CLASS_OPTIONS: [bigger]
+#+LATEX_COMPILER: tectonic
+#+COLUMNS: %40ITEM %10BEAMER_env(Env) %9BEAMER_envargs(Env Args) %4BEAMER_col(Col) %10BEAMER_extra(Extra)
+#+BEAMER_THEME: metropolis
+
+* Preamble
+** Nix is magic
+Surprise, this is a magic show!
+
+Nix is a special kind of magic for specifying pretty much any output you could want.
+** Nothing up my sleeve
+
+
+* /Extremely/ abbreviated intro to nix
+** Nix the First: Language
+Main features:
+- functional
+- dynamic
+- lazy
+- base language is _tiny_
+- Haskell influence (though much divergence since)
+** Nix the First: Language (con't)
+Quirky type system:
+- strings have native multiline support
+- URIs
+- paths (relative and absolute)
+- no advanced objects, everything is a set (map)
+- first-class functions
+** Nix the Second: Package Manager
+nixpkgs
+- Fundamental unit: the derivation
+- Built with and extends Nix language
+- Largest, most active package repository of its kind
+- Many smaller ecosystems, especially by language (2nix)
+** Nix the Second: Package Manager (con't)
+The Dirty Secret:
+[[https://i.redd.it/ohbkwn9ke6q51.png]]
+** Nix the Third: Linux Distribution
+NixOS
+- Built on top of nixpkgs and systemd
+- Familiar to users of gentoo and arch
+- Adds in modules for system-level configurability
+** Nix the Fourth: /misc/ tooling
+- home-manager (nix for $HOME)
+- nix-darwin (nix for macOS)
+- cachix (arbitrary caching for nix derivations)
+- Hercules CI (CI/CD for nix derivations)
+* Demo Overview
+** Purpose
+- survey of a bunch of common problems and demonstrate solutions with nix
+- whirlwind tour of some great nix ecosystem tooling
+- code is public
+** Let's install nix!
+- Go to [[https://nixos.org]]
+- select *Download*
+- Follow multi-user installation instructions (unless you're on something weird like WSL)
+* First party trick: nix for managing development environments
+** Misc tools for environment management
+- direnv: automate environment switching in shell
+- devshell: manage all your development tools per-project with a simple configuration file
+** Let's install direnv!
+- Go to [[https://direnv.net/#basic-installation]]
+- Follow the NixOS instructions (because I'm not installing Homebrew, boo!) for non-NixOS systems
+- Hook direnv into shell
+** Oops, we need git, too
+We /could/ install git the usual way on macOS...
+(by installing the Xcode command line tools)
+...but what if we didn't have to?
+nixpkgs to the rescue! And this time we don't even need to "install" it!
+#+begin_src shell
+nix-shell -p git
+#+end_src
+** Let's grab the code
+#+begin_src shell
+git clone https://github.com/flurie/nix-party-tricks.git
+#+end_src
+** ...and then let the magic take hold
+direnv holds a *lot* of power, so be careful with what you allow.
+
+Using nix with direnv provides an additional level of security.
+
+Time to take the ride.
+
+#+begin_src shell
+direnv allow
+#+end_src
+** Tour our new powers
+[[https://gfycat.com/creativecreativeiguana]]
+I'm in devshell! I'm in normal shell!
+** Enter AWS with train
+Set the stage for more magic
+#+begin_src shell
+cp -r "$PRJ_ROOT"/.aws ~/.aws
+#+end_src
+Create some new creds and never have to look at them!
+#+begin_example
+Log in to AWS
+
+Create new programmatic IAM credentials
+
+Download the csv to our devshell root
+#+end_example
+** Time to test the thing out
+#+begin_src shell
+aws sts get-caller-identity
+#+end_src
+* Second party trick: nix for managing ec2s
+** Preamble: terraform to stand up the host
+#+begin_src shell
+# $PRJ_ROOT/terraform/ec2
+terraform init
+terraform apply
+#+end_src
+** Misc tools for deployment management
+- cachix (arbitrary caching for nix derivations)
+- deploy-rs (deploy NixOS to anywhere from anywhere)
+** NixOS on AWS three ways
+\#1: AWS instance user data!
+#+begin_src terraform
+# maim.tf
+resource "aws_instance" "nixos" {
+  ami                    = data.aws_ami.nixos-latest.id
+  instance_type          = "t3.micro"
+  key_name               = aws_key_pair.aws_ssh_key.key_name
+  vpc_security_group_ids = [aws_security_group.nixos.id]
+
+  root_block_device {
+    # need this to be big enough to build things
+    volume_size = 20
+  }
+
+  tags = {
+    Name = "nix-party-tricks"
+  }
+
+  user_data = <<END
+### https://nixos.org/channels/nixos-22.05 nixos
+
+{ config, pkgs, modulesPath, ... }:
+{
+  # nix uses same string interpolation as terraform, so we must escape it here
+  imports = [ "$${modulesPath}/virtualisation/amazon-image.nix" ];
+  ec2.hvm = true;
+  system.stateVersion = "22.05";
+  environment.systemPackages = with pkgs; [ nix-direnv direnv git ];
+  networking.hostName = "nixos-aws";
+  nix.extraOptions = "experimental-features = nix-command flakes";
+  programs.bash.interactiveShellInit = ''
+      eval "$($${pkgs.direnv}/bin/direnv hook bash)"
+  '';
+}
+END
+}
+#+end_src
+** NixOS on AWS three ways
+\#2: deploy-rs
+* Third party trick: nix for managing lambda runtimes
+** Preamble: more terraform for my lambda
+** Introducing a great nix feature: remote builders

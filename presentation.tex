@@ -1,0 +1,83 @@
+% Created 2022-07-08 Fri 16:27
+\documentclass[bigger]{beamer}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{wrapfig}
+\usepackage{rotating}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{capt-of}
+\usepackage{hyperref}
+\usetheme{metropolis}
+\author{Alexander Flurie}
+\date{\textit{<2022-07-12 Tue>}}
+\title{Nix party tricks}
+\hypersetup{
+ pdfauthor={Alexander Flurie},
+ pdftitle={Nix party tricks},
+ pdfkeywords={nix aws ec2 terraform},
+ pdfsubject={Some party tricks you can perform with nix and AWS},
+ pdfcreator={Emacs 28.1 (Org mode 9.6)}, 
+ pdflang={English}}
+\begin{document}
+
+\maketitle
+\begin{frame}{Outline}
+\tableofcontents
+\end{frame}
+
+
+\section{Preamble}
+\label{sec:org9076514}
+\begin{frame}[label={sec:orgcbbaeaf}]{Nix is magic}
+Surprise, this is a magic show!
+
+Nix is a special kind of magic for specifying pretty much any output you could want.
+\end{frame}
+\begin{frame}[label={sec:org522b142}]{Nothing up my sleeve}
+\end{frame}
+
+
+\section{\emph{Extremely} abbreviated intro to nix}
+\label{sec:org7c875ee}
+\begin{frame}[label={sec:org3796989}]{language}
+\end{frame}
+
+\begin{frame}[label={sec:org6f1a791}]{package manager}
+\end{frame}
+\begin{frame}[label={sec:org64ed2f3}]{linux distro}
+\end{frame}
+\begin{frame}[label={sec:org8e8e9af}]{\emph{misc} tooling}
+\begin{block}{home-manager (nix for \$HOME)}
+\end{block}
+\begin{block}{nix-darwin (nix for macOS)}
+\end{block}
+\end{frame}
+\section{Talk aim}
+\label{sec:org15e428e}
+\begin{frame}[label={sec:org16b8ab0}]{survey of a bunch of common problems and demonstrate solutions with nix}
+\end{frame}
+\begin{frame}[label={sec:orgea4cb7b}]{whirlwind tour of some great nix ecosystem tooling}
+\end{frame}
+\begin{frame}[label={sec:orgddadf8b}]{code is public}
+\end{frame}
+\section{First party trick: nix for managing development environments}
+\label{sec:org0ff4895}
+\begin{frame}[label={sec:org6bbd33a}]{Introducing great misc tools: direnv and devshell}
+\end{frame}
+\section{Second party trick: nix for managing ec2s}
+\label{sec:org47308a2}
+\begin{frame}[label={sec:org81281a1}]{Preamble: terraform to stand up the host}
+\end{frame}
+\begin{frame}[label={sec:orgea2e96d}]{Introducing a great misc tool: deploy-rs}
+\end{frame}
+\section{Third party trick: nix for managing lambda runtimes}
+\label{sec:org91eb7a7}
+\begin{frame}[label={sec:orga317e47}]{Preamble: more terraform for my lambda}
+\end{frame}
+\begin{frame}[label={sec:org15d80ac}]{Introducing a great nix feature: remote builders}
+\end{frame}
+\end{document}
