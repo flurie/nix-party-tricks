@@ -3,9 +3,7 @@
     "deploy-rs": {
       "inputs": {
         "flake-compat": "flake-compat",
-        "nixpkgs": [
-          "nixpkgs"
-        ],
+        "nixpkgs": "nixpkgs",
         "utils": "utils"
       },
       "locked": {
@@ -114,6 +112,22 @@
     },
     "nixpkgs": {
       "locked": {
+        "lastModified": 1657292830,
+        "narHash": "sha256-ldfVSTveWceDCmW6gf3B4kR6vwmz/XS80y5wsLLHFJU=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "334ec8b503c3981e37a04b817a70e8d026ea9e84",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixpkgs-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_2": {
+      "locked": {
         "lastModified": 1656755932,
         "narHash": "sha256-TGThfOxr+HjFK464+UoUE6rClp2cwxjiKvHcBVdIGSQ=",
         "owner": "nixos",
@@ -134,7 +148,7 @@
         "devshell": "devshell",
         "flake-utils": "flake-utils",
         "nixos-generators": "nixos-generators",
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": "nixpkgs_2"
       }
     },
     "utils": {

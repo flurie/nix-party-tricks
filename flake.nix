@@ -37,7 +37,7 @@
   # tool for deploying any common nix system outputs to nix systems
   inputs.deploy-rs = {
     url = "github:serokell/deploy-rs";
-    inputs.nixpkgs.follows = "nixpkgs";
+    # inputs.nixpkgs.follows = "nixpkgs";
   };
 
   # tool for generating images of all kinds, including AMIs
@@ -65,8 +65,8 @@
           overlays = [
             devshell.overlay
             (final: prev: {
-              # # expose deploy-rs package directly here
-              # deploy-rs = deploy-rs.defaultPackage.${system};
+              # expose deploy-rs package directly here
+              deploy-rs = deploy-rs.defaultPackage.${system};
               # https://github.com/NixOS/nixpkgs/issues/175875
               awscli2 = if prev.pkgs.stdenv.isDarwin then
                 nixpkgs.legacyPackages.x86_64-darwin.awscli2
