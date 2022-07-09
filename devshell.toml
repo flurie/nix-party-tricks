@@ -3,10 +3,10 @@
 package = "devshell.cli"
 help = "Per project developer environments"
 
-[[commands]]
-package = "deploy-rs"
-name = "deploy"
-help = "deploy Nix anywhere"
+# [[commands]]
+# package = "deploy-rs"
+# name = "deploy"
+# help = "deploy Nix anywhere"
 
 [[commands]]
 name = "access_keys_from_csv"

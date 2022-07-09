@@ -88,7 +88,8 @@ nix-shell -p git
 #+end_src
 ** Let's grab the code
 #+begin_src shell
-git clone https://github.com/flurie/nix-party-tricks.git
+git clone
+https://github.com/flurie/nix-party-tricks.git
 #+end_src
 ** ...and then let the magic take hold
 direnv holds a *lot* of power, so be careful with what you allow.
@@ -101,8 +102,9 @@ Time to take the ride.
 direnv allow
 #+end_src
 ** Tour our new powers
-[[https://gfycat.com/creativecreativeiguana]]
-I'm in devshell! I'm in normal shell!
+#+ATTR_LaTeX: :width 6cm
+  #+CAPTION: I'm in devshell! I'm in normal shell!
+  [[file:homer.jpg]]
 ** Enter AWS with train
 Set the stage for more magic
 #+begin_src shell
@@ -131,7 +133,7 @@ terraform apply
 - cachix (arbitrary caching for nix derivations)
 - deploy-rs (deploy NixOS to anywhere from anywhere)
 ** NixOS on AWS three ways
-\#1: AWS instance user data!
+#1: AWS instance user data!
 #+begin_src terraform
 # maim.tf
 resource "aws_instance" "nixos" {
@@ -169,7 +171,7 @@ END
 }
 #+end_src
 ** NixOS on AWS three ways
-\#2: deploy-rs
+#2: deploy-rs
 * Third party trick: nix for managing lambda runtimes
 ** Preamble: more terraform for my lambda
 ** Introducing a great nix feature: remote builders

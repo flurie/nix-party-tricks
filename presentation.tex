@@ -1,4 +1,4 @@
-% Created 2022-07-08 Fri 16:27
+% Created 2022-07-09 Sat 16:10
 \documentclass[bigger]{beamer}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -31,53 +31,213 @@
 
 
 \section{Preamble}
-\label{sec:org9076514}
-\begin{frame}[label={sec:orgcbbaeaf}]{Nix is magic}
+\label{sec:orga7d1e72}
+\begin{frame}[label={sec:orge0f59e0}]{Nix is magic}
 Surprise, this is a magic show!
 
 Nix is a special kind of magic for specifying pretty much any output you could want.
 \end{frame}
-\begin{frame}[label={sec:org522b142}]{Nothing up my sleeve}
+\begin{frame}[label={sec:org528fef1}]{Nothing up my sleeve}
 \end{frame}
 
 
 \section{\emph{Extremely} abbreviated intro to nix}
-\label{sec:org7c875ee}
-\begin{frame}[label={sec:org3796989}]{language}
+\label{sec:orge4e4b5b}
+\begin{frame}[label={sec:org92f11a4}]{Nix the First: Language}
+Main features:
+\begin{itemize}
+\item functional
+\item dynamic
+\item lazy
+\item base language is \uline{tiny}
+\item Haskell influence (though much divergence since)
+\end{itemize}
 \end{frame}
-
-\begin{frame}[label={sec:org6f1a791}]{package manager}
+\begin{frame}[label={sec:org221555e}]{Nix the First: Language (con't)}
+Quirky type system:
+\begin{itemize}
+\item strings have native multiline support
+\item URIs
+\item paths (relative and absolute)
+\item no advanced objects, everything is a set (map)
+\item first-class functions
+\end{itemize}
 \end{frame}
-\begin{frame}[label={sec:org64ed2f3}]{linux distro}
+\begin{frame}[label={sec:orgdba0189}]{Nix the Second: Package Manager}
+nixpkgs
+\begin{itemize}
+\item Fundamental unit: the derivation
+\item Built with and extends Nix language
+\item Largest, most active package repository of its kind
+\item Many smaller ecosystems, especially by language (2nix)
+\end{itemize}
 \end{frame}
-\begin{frame}[label={sec:org8e8e9af}]{\emph{misc} tooling}
-\begin{block}{home-manager (nix for \$HOME)}
-\end{block}
-\begin{block}{nix-darwin (nix for macOS)}
-\end{block}
+\begin{frame}[label={sec:orgd417cc1}]{Nix the Second: Package Manager (con't)}
+The Dirty Secret:
+\begin{center}
+\includegraphics[width=.9\linewidth]{/Users/flurie/.emacs.d/.local/cache/org-persist/7d/4ab595-074b-42d2-beb8-1af9e6a32fc6-7a64e2c687f385d1a58d43451063534f.png}
+\end{center}
 \end{frame}
-\section{Talk aim}
-\label{sec:org15e428e}
-\begin{frame}[label={sec:org16b8ab0}]{survey of a bunch of common problems and demonstrate solutions with nix}
+\begin{frame}[label={sec:org5bc54fd}]{Nix the Third: Linux Distribution}
+NixOS
+\begin{itemize}
+\item Built on top of nixpkgs and systemd
+\item Familiar to users of gentoo and arch
+\item Adds in modules for system-level configurability
+\end{itemize}
 \end{frame}
-\begin{frame}[label={sec:orgea4cb7b}]{whirlwind tour of some great nix ecosystem tooling}
+\begin{frame}[label={sec:org3a6a84f}]{Nix the Fourth: \emph{misc} tooling}
+\begin{itemize}
+\item home-manager (nix for \$HOME)
+\item nix-darwin (nix for macOS)
+\item cachix (arbitrary caching for nix derivations)
+\item Hercules CI (CI/CD for nix derivations)
+\end{itemize}
 \end{frame}
-\begin{frame}[label={sec:orgddadf8b}]{code is public}
+\section{Demo Overview}
+\label{sec:org3aedbf8}
+\begin{frame}[label={sec:org834285b}]{Purpose}
+\begin{itemize}
+\item survey of a bunch of common problems and demonstrate solutions with nix
+\item whirlwind tour of some great nix ecosystem tooling
+\item code is public
+\end{itemize}
+\end{frame}
+\begin{frame}[label={sec:orgb12a4c2}]{Let's install nix!}
+\begin{itemize}
+\item Go to \url{https://nixos.org}
+\item select \alert{Download}
+\item Follow multi-user installation instructions (unless you're on something weird like WSL)
+\end{itemize}
 \end{frame}
 \section{First party trick: nix for managing development environments}
-\label{sec:org0ff4895}
-\begin{frame}[label={sec:org6bbd33a}]{Introducing great misc tools: direnv and devshell}
+\label{sec:orgb6de55d}
+\begin{frame}[label={sec:org9626570}]{Misc tools for environment management}
+\begin{itemize}
+\item direnv: automate environment switching in shell
+\item devshell: manage all your development tools per-project with a simple configuration file
+\end{itemize}
+\end{frame}
+\begin{frame}[label={sec:org0ccfe82}]{Let's install direnv!}
+\begin{itemize}
+\item Go to \url{https://direnv.net/\#basic-installation}
+\item Follow the NixOS instructions (because I'm not installing Homebrew, boo!) for non-NixOS systems
+\item Hook direnv into shell
+\end{itemize}
+\end{frame}
+\begin{frame}[label={sec:orgf166639},fragile]{Oops, we need git, too}
+ We \emph{could} install git the usual way on macOS\ldots{}
+(by installing the Xcode command line tools)
+\ldots{}but what if we didn't have to?
+nixpkgs to the rescue! And this time we don't even need to ``install'' it!
+\begin{verbatim}
+nix-shell -p git
+\end{verbatim}
+\end{frame}
+\begin{frame}[label={sec:orgeac0dfb},fragile]{Let's grab the code}
+ \begin{verbatim}
+git clone
+https://github.com/flurie/nix-party-tricks.git
+\end{verbatim}
+\end{frame}
+\begin{frame}[label={sec:org0b95c30},fragile]{\ldots{}and then let the magic take hold}
+ direnv holds a \alert{lot} of power, so be careful with what you allow.
+
+Using nix with direnv provides an additional level of security.
+
+Time to take the ride.
+
+\begin{verbatim}
+direnv allow
+\end{verbatim}
+\end{frame}
+\begin{frame}[label={sec:orgb2d34a4}]{Tour our new powers}
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=6cm]{homer.jpg}
+\caption{I'm in devshell! I'm in normal shell!}
+\end{figure}
+\end{frame}
+\begin{frame}[label={sec:orgda50dd8},fragile]{Enter AWS with train}
+ Set the stage for more magic
+\begin{verbatim}
+cp -r "$PRJ_ROOT"/.aws ~/.aws
+\end{verbatim}
+Create some new creds and never have to look at them!
+\begin{verbatim}
+Log in to AWS
+
+Create new programmatic IAM credentials
+
+Download the csv to our devshell root
+\end{verbatim}
+\end{frame}
+\begin{frame}[label={sec:orgec9a1fe},fragile]{Time to test the thing out}
+ \begin{verbatim}
+aws sts get-caller-identity
+\end{verbatim}
 \end{frame}
 \section{Second party trick: nix for managing ec2s}
-\label{sec:org47308a2}
-\begin{frame}[label={sec:org81281a1}]{Preamble: terraform to stand up the host}
+\label{sec:orga3f615e}
+\begin{frame}[label={sec:org53acbcc},fragile]{Preamble: terraform to stand up the host}
+ \begin{verbatim}
+# $PRJ_ROOT/terraform/ec2
+terraform init
+terraform apply
+\end{verbatim}
 \end{frame}
-\begin{frame}[label={sec:orgea2e96d}]{Introducing a great misc tool: deploy-rs}
+\begin{frame}[label={sec:org18b9a86}]{Misc tools for deployment management}
+\begin{itemize}
+\item cachix (arbitrary caching for nix derivations)
+\item deploy-rs (deploy NixOS to anywhere from anywhere)
+\end{itemize}
+\end{frame}
+\begin{frame}[label={sec:org7f1c6ed},fragile]{NixOS on AWS three ways}
+ \#1: AWS instance user data!
+\begin{verbatim}
+# maim.tf
+resource "aws_instance" "nixos" {
+  ami                    = data.aws_ami.nixos-latest.id
+  instance_type          = "t3.micro"
+  key_name               = aws_key_pair.aws_ssh_key.key_name
+  vpc_security_group_ids = [aws_security_group.nixos.id]
+
+  root_block_device {
+    # need this to be big enough to build things
+    volume_size = 20
+  }
+
+  tags = {
+    Name = "nix-party-tricks"
+  }
+
+  user_data = <<END
+### https://nixos.org/channels/nixos-22.05 nixos
+
+{ config, pkgs, modulesPath, ... }:
+{
+  # nix uses same string interpolation as terraform, so we must escape it here
+  imports = [ "$${modulesPath}/virtualisation/amazon-image.nix" ];
+  ec2.hvm = true;
+  system.stateVersion = "22.05";
+  environment.systemPackages = with pkgs; [ nix-direnv direnv git ];
+  networking.hostName = "nixos-aws";
+  nix.extraOptions = "experimental-features = nix-command flakes";
+  programs.bash.interactiveShellInit = ''
+      eval "$($${pkgs.direnv}/bin/direnv hook bash)"
+  '';
+}
+END
+}
+\end{verbatim}
+\end{frame}
+\begin{frame}[label={sec:orgfdc2885}]{NixOS on AWS three ways}
+\#2: deploy-rs
 \end{frame}
 \section{Third party trick: nix for managing lambda runtimes}
-\label{sec:org91eb7a7}
-\begin{frame}[label={sec:orga317e47}]{Preamble: more terraform for my lambda}
+\label{sec:orgc4ca418}
+\begin{frame}[label={sec:orgc88e507}]{Preamble: more terraform for my lambda}
 \end{frame}
-\begin{frame}[label={sec:org15d80ac}]{Introducing a great nix feature: remote builders}
+\begin{frame}[label={sec:orgc5c9426}]{Introducing a great nix feature: remote builders}
 \end{frame}
 \end{document}
