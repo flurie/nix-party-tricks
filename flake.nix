@@ -55,7 +55,7 @@
     # For a given attrA.attrB this results in attrA.${system}.attrB
     flake-utils.lib.eachDefaultSystem (system: {
       # prefer devShells.${system}.default to devShell now
-      devShells.default = let
+      devShell = let
         pkgs = import nixpkgs {
           inherit system;
           # overlays allow you to "overlay" attributes on a set, typically on
