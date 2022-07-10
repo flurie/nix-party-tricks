@@ -51,35 +51,58 @@
   # See https://nixos.wiki/wiki/Flakes#Output_schema for the current schema.
   outputs =
     { self, flake-utils, devshell, nixpkgs, deploy-rs, nixos-generators, ... }:
-
-    # For a given attrA.attrB this results in attrA.${system}.attrB
-    flake-utils.lib.eachDefaultSystem (system: {
-      # prefer devShells.${system}.default to devShell now
-      devShell = let
-        pkgs = import nixpkgs {
-          inherit system;
-          # overlays allow you to "overlay" attributes on a set, typically on
-          # nixpkgs. here we're adding some helper functions, adding some
-          # packages from outside of nixpkgs and modifying another out of
-          # necessity since it has a broken dependency.
-          overlays = [
-            devshell.overlay
-            (final: prev: {
-              # expose deploy-rs package directly here
-              deploy-rs = deploy-rs.defaultPackage.${system};
-              # https://github.com/NixOS/nixpkgs/issues/175875
-              awscli2 = if prev.pkgs.stdenv.isDarwin then
-                nixpkgs.legacyPackages.x86_64-darwin.awscli2
-              else
-                prev.awscli2;
-            })
-          ];
-
-        };
-      in pkgs.devshell.mkShell {
-        imports = [ (pkgs.devshell.importTOML ./devshell.toml) ];
-      };
-    }) // {
+    let
+      # For a given attrA.attrB this results in attrA.${system}.attrB
+      eachOutputs = flake-utils.lib.eachDefaultSystem (system:
+        let
+          pkgs = import nixpkgs {
+            # overlays allow you to "overlay" attributes on a set, typically on
+            # nixpkgs. here we're adding some helper functions, adding some
+            # packages from outside of nixpkgs and modifying another out of
+            # necessity since it has a broken dependency.
+            overlays = [
+              devshell.overlay
+              (final: prev: {
+                # expose deploy-rs package directly here
+                deploy-rs = deploy-rs.defaultPackage.${system};
+                # https://github.com/NixOS/nixpkgs/issues/175875
+                awscli2 = if prev.pkgs.stdenv.isDarwin then
+                  nixpkgs.legacyPackages.x86_64-darwin.awscli2
+                else
+                  prev.awscli2;
+              })
+            ];
+            inherit system;
+          };
+          # rec means we can define attributes in terms of other attributes.
+          # it allows us to "rec"urse the definitions
+        in rec {
+          # our devshell for each standard nix system
+          devShells.default = pkgs.devshell.mkShell {
+            imports = [ (pkgs.devshell.importTOML ./devshell.toml) ];
+          };
+          # our presentation in html format, convenient for static sites!
+          packages.nixPartyTricksDocs = pkgs.stdenv.mkDerivation {
+            name = "nix-party-tricks-docs";
+            buildInputs = [ pkgs.pandoc ];
+            src = builtins.filterSource (path: type:
+              type == "regular" && (baseNameOf path == "presentation.org"
+                || baseNameOf path == "homer.jpg")) ./docs;
+            buildPhase = ''
+              pandoc -f org -t html presentation.org > index.html
+            '';
+            installPhase = ''
+              mkdir -p $out/www
+              mv index.html $out/www
+            '';
+          };
+          # packages.${system}.default is what a flake builds when supplied
+          # without an argument
+          packages.default = packages.nixPartyTricksDocs;
+        });
+      # need _recursiveUpdate_ because otherwise the second packages attribute
+      # will clobber the first one, but standard map merge uses _//_
+    in nixpkgs.lib.recursiveUpdate eachOutputs {
       # machine config for our aws tester
       nixosConfigurations.aws = nixpkgs.lib.nixosSystem
         (let system = "x86_64-linux";
@@ -103,18 +126,20 @@
               ec2.hvm = true;
               system.stateVersion = "22.05";
             })
-            ({ config, ... }: {
+            ({ config, ... }: rec {
+              networking.hostName = "nixos-aws";
               # Just enabling nginx will provide a config with a set of
               # sane defaults: serving the standard nginx static site on
               # localhost:80.
-              services.nginx = { enable = true; };
+              services.nginx.enable = true;
               # The firewall is on by default, so we have to poke a hole in it.
               networking.firewall.allowedTCPPorts = [ 80 ];
             })
           ];
         });
-      packages.x86_64-linux.aws = nixos-generators.nixosGenerate {
-        pkgs = nixpkgs.legacyPackages.x86_64-linux;
+      packages.x86_64-linux.awsImage = let system = "x86_64-linux";
+      in nixos-generators.nixosGenerate {
+        pkgs = nixpkgs.legacyPackages.${system};
         modules = [
           # fun note: the modules list can take functions that expect
           # standard NixOS attributes so that non-NixOS systems aren't
@@ -136,18 +161,32 @@
             ec2.hvm = true;
             system.stateVersion = "22.05";
           })
-          ({ config, ... }: {
+          ({ config, ... }: rec {
+            networking.hostName = "nixos-aws-ami";
             # Required for flakes support
             nix.extraOptions = "experimental-features = nix-command flakes";
-            # Just enabling nginx will provide a config with a set of
-            # sane defaults: serving the standard nginx static site on
-            # localhost:80.
-            services.nginx = { enable = true; };
+            # Here nginx is serving our presentation converted to html instead
+            # of its normal splash page. I made the output of that a directory
+            # rather than a single file because otherwise the derivation result
+            # would show up as a single file, and we want to have a directory
+            # to serve from.
+            services.nginx = {
+              enable = true;
+              # we're serving up the machine's own hostname, set for us by
+              # our nix configuration. note if it had dots in it that we would
+              # need to string escape it.
+              virtualHosts.${networking.hostName} = {
+                # note how I can embed nix expressions within themselves,
+                # much like how you can embed bash evaluations.
+                root = "${self.packages."${system}".default}/www";
+              };
+            };
             # The firewall is on by default, so we have to poke a hole in it.
             networking.firewall.allowedTCPPorts = [ 80 ];
           })
-        ]; # you can include your own nixos configuration here, i.e.
-        # ./configuration.nix
+        ];
+        # specifies the format of the image we want to create. AMIs use VHD
+        # due to legacy.
         format = "amazon";
       };
       deploy = {
@@ -156,7 +195,6 @@
             # these settings are configurable at each level of the deploy
             # object, so we set them so that they only need to be written
             # once, keeping our code DRY.
-            user = "root";
             sshUser = "root";
             sshOpts = [ "-i" "/tmp/nixos-ssh.pem" ];
             # NOTE: we can not deal with the IPs in a demo by adding it to
@@ -172,13 +210,11 @@
               # demo easy, but it's not a good idea to use a temp path for ssh
               # keys. A better solution here would be an actual secrets manager
               # such as 1password or Pass, the standard unix password manager.
-              sshOpts = [ "-i" "/tmp/nixos-ssh.pem" ];
               path = deploy-rs.lib.x86_64-linux.activate.nixos
                 self.nixosConfigurations.aws;
             };
           };
         };
-
       };
     };
 }

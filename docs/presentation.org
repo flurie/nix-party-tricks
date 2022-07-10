@@ -25,8 +25,7 @@ Surprise, this is a magic show!
 
 Nix is a special kind of magic for specifying pretty much any output you could want.
 ** Nothing up my sleeve
-
-
+Behold, a fresh VM.
 * /Extremely/ abbreviated intro to nix
 ** Nix the First: Language
 Main features:
@@ -108,7 +107,7 @@ direnv allow
 ** Enter AWS with train
 Set the stage for more magic
 #+begin_src shell
-cp -r "$PRJ_ROOT"/.aws ~/.aws
+cp -r "$PRJ_ROOT"/support/.aws ~/.aws
 #+end_src
 Create some new creds and never have to look at them!
 #+begin_example
@@ -133,22 +132,18 @@ terraform apply
 - cachix (arbitrary caching for nix derivations)
 - deploy-rs (deploy NixOS to anywhere from anywhere)
 ** NixOS on AWS three ways
-#1: AWS instance user data!
+#1: ec2 user data
+** NixOS on AWS three ways - #1
+#+latex: \tiny
 #+begin_src terraform
-# maim.tf
+# main.tf
 resource "aws_instance" "nixos" {
-  ami                    = data.aws_ami.nixos-latest.id
-  instance_type          = "t3.micro"
-  key_name               = aws_key_pair.aws_ssh_key.key_name
-  vpc_security_group_ids = [aws_security_group.nixos.id]
+
+  # ...some parts omitted
 
   root_block_device {
     # need this to be big enough to build things
     volume_size = 20
-  }
-
-  tags = {
-    Name = "nix-party-tricks"
   }
 
   user_data = <<END
@@ -162,16 +157,80 @@ resource "aws_instance" "nixos" {
   system.stateVersion = "22.05";
   environment.systemPackages = with pkgs; [ nix-direnv direnv git ];
   networking.hostName = "nixos-aws";
-  nix.extraOptions = "experimental-features = nix-command flakes";
-  programs.bash.interactiveShellInit = ''
-      eval "$($${pkgs.direnv}/bin/direnv hook bash)"
-  '';
 }
 END
 }
 #+end_src
+** NixOS on AWS three ways - #1
+We can now enter the machine.
+
+Make sure to use the IP given by terraform.
+
+#+begin_src shell
+ssh -i /tmp/nixos-ssh.pem root@{IP}
+#+end_src
+** NixOS on AWS three ways - #1
+Let's pull down the party tricks repo here...
+#+begin_src shell
+git clone
+https://github.com/flurie/nix-party-tricks.git
+#+end_src
+** NixOS on AWS three ways - #1
+...and activate the devshell!
+#+begin_src shell
+cd nix-party-tricks && direnv allow
+#+end_src
 ** NixOS on AWS three ways
 #2: deploy-rs
+** NixOS on AWS three ways - #2
+#+latex: \tiny
+#+begin_src nix
+deploy = {
+  nodes = {
+    "aws" = {
+      sshUser = "root";
+      sshOpts = [ "-i" "/tmp/nixos-ssh.pem" ];
+      hostname = "nixos-aws";
+      profiles.hello = {
+        path = deploy-rs.lib.x86_64-linux.activate.custom
+          nixpkgs.legacyPackages.x86_64-linux.hello "./bin/hello";
+      };
+      profiles.system = {
+        path = deploy-rs.lib.x86_64-linux.activate.nixos
+          self.nixosConfigurations.aws;
+      };
+    };
+  };
+};
+#+end_src
+** NixOS on AWS three ways - #2
+Deploying to hostname, make sure it's in our /etc/hosts
+#+begin_src shell
+sudo echo "{IP}  nixos-aws" >> /etc/hosts
+#+end_src
+** NixOS on AWS three ways - #2
+First deploy: "hello world"
+#+begin_src shell
+deploy .#aws.hello
+#+end_src
+** NixOS on AWS three ways - #2
+Second deploy: NixOS system running nginx
+#+begin_src nix
+{
+  services.nginx = { enable = true; };
+  networking.firewall.allowedTCPPorts = [ 80 ];
+}
+#+end_src
+Let's deploy!
+#+begin_src shell
+deploy .#aws.system
+#+end_src
+** NixOS on AWS three ways - #2
+Now we should get the nginx splash page in a browser
+#+begin_src
+http://nixos-aws
+#+end_src
+
 * Third party trick: nix for managing lambda runtimes
 ** Preamble: more terraform for my lambda
 ** Introducing a great nix feature: remote builders

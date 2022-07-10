@@ -1,4 +1,4 @@
-% Created 2022-07-09 Sat 16:10
+% Created 2022-07-10 Sun 16:49
 \documentclass[bigger]{beamer}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -11,6 +11,7 @@
 \usepackage{amssymb}
 \usepackage{capt-of}
 \usepackage{hyperref}
+\usepackage{minted}
 \usetheme{metropolis}
 \author{Alexander Flurie}
 \date{\textit{<2022-07-12 Tue>}}
@@ -31,19 +32,18 @@
 
 
 \section{Preamble}
-\label{sec:orga7d1e72}
-\begin{frame}[label={sec:orge0f59e0}]{Nix is magic}
+\label{sec:orgcf4ae11}
+\begin{frame}[label={sec:orge93ee95}]{Nix is magic}
 Surprise, this is a magic show!
 
 Nix is a special kind of magic for specifying pretty much any output you could want.
 \end{frame}
-\begin{frame}[label={sec:org528fef1}]{Nothing up my sleeve}
+\begin{frame}[label={sec:orgb442b5b}]{Nothing up my sleeve}
+Behold, a fresh VM.
 \end{frame}
-
-
 \section{\emph{Extremely} abbreviated intro to nix}
-\label{sec:orge4e4b5b}
-\begin{frame}[label={sec:org92f11a4}]{Nix the First: Language}
+\label{sec:orgbdfe28d}
+\begin{frame}[label={sec:org543f6c4}]{Nix the First: Language}
 Main features:
 \begin{itemize}
 \item functional
@@ -53,7 +53,7 @@ Main features:
 \item Haskell influence (though much divergence since)
 \end{itemize}
 \end{frame}
-\begin{frame}[label={sec:org221555e}]{Nix the First: Language (con't)}
+\begin{frame}[label={sec:org44d97cf}]{Nix the First: Language (con't)}
 Quirky type system:
 \begin{itemize}
 \item strings have native multiline support
@@ -63,7 +63,7 @@ Quirky type system:
 \item first-class functions
 \end{itemize}
 \end{frame}
-\begin{frame}[label={sec:orgdba0189}]{Nix the Second: Package Manager}
+\begin{frame}[label={sec:orgbbc45e5}]{Nix the Second: Package Manager}
 nixpkgs
 \begin{itemize}
 \item Fundamental unit: the derivation
@@ -72,13 +72,13 @@ nixpkgs
 \item Many smaller ecosystems, especially by language (2nix)
 \end{itemize}
 \end{frame}
-\begin{frame}[label={sec:orgd417cc1}]{Nix the Second: Package Manager (con't)}
+\begin{frame}[label={sec:org28569cb}]{Nix the Second: Package Manager (con't)}
 The Dirty Secret:
 \begin{center}
 \includegraphics[width=.9\linewidth]{/Users/flurie/.emacs.d/.local/cache/org-persist/7d/4ab595-074b-42d2-beb8-1af9e6a32fc6-7a64e2c687f385d1a58d43451063534f.png}
 \end{center}
 \end{frame}
-\begin{frame}[label={sec:org5bc54fd}]{Nix the Third: Linux Distribution}
+\begin{frame}[label={sec:orga8e71c0}]{Nix the Third: Linux Distribution}
 NixOS
 \begin{itemize}
 \item Built on top of nixpkgs and systemd
@@ -86,7 +86,7 @@ NixOS
 \item Adds in modules for system-level configurability
 \end{itemize}
 \end{frame}
-\begin{frame}[label={sec:org3a6a84f}]{Nix the Fourth: \emph{misc} tooling}
+\begin{frame}[label={sec:org1a2a2e4}]{Nix the Fourth: \emph{misc} tooling}
 \begin{itemize}
 \item home-manager (nix for \$HOME)
 \item nix-darwin (nix for macOS)
@@ -95,15 +95,15 @@ NixOS
 \end{itemize}
 \end{frame}
 \section{Demo Overview}
-\label{sec:org3aedbf8}
-\begin{frame}[label={sec:org834285b}]{Purpose}
+\label{sec:org3c81b7a}
+\begin{frame}[label={sec:org6f9fc42}]{Purpose}
 \begin{itemize}
 \item survey of a bunch of common problems and demonstrate solutions with nix
 \item whirlwind tour of some great nix ecosystem tooling
 \item code is public
 \end{itemize}
 \end{frame}
-\begin{frame}[label={sec:orgb12a4c2}]{Let's install nix!}
+\begin{frame}[label={sec:org6a09cd0}]{Let's install nix!}
 \begin{itemize}
 \item Go to \url{https://nixos.org}
 \item select \alert{Download}
@@ -111,58 +111,58 @@ NixOS
 \end{itemize}
 \end{frame}
 \section{First party trick: nix for managing development environments}
-\label{sec:orgb6de55d}
-\begin{frame}[label={sec:org9626570}]{Misc tools for environment management}
+\label{sec:org872305d}
+\begin{frame}[label={sec:orge86b34f}]{Misc tools for environment management}
 \begin{itemize}
 \item direnv: automate environment switching in shell
 \item devshell: manage all your development tools per-project with a simple configuration file
 \end{itemize}
 \end{frame}
-\begin{frame}[label={sec:org0ccfe82}]{Let's install direnv!}
+\begin{frame}[label={sec:org9acb822}]{Let's install direnv!}
 \begin{itemize}
 \item Go to \url{https://direnv.net/\#basic-installation}
 \item Follow the NixOS instructions (because I'm not installing Homebrew, boo!) for non-NixOS systems
 \item Hook direnv into shell
 \end{itemize}
 \end{frame}
-\begin{frame}[label={sec:orgf166639},fragile]{Oops, we need git, too}
+\begin{frame}[label={sec:org7437e7e},fragile]{Oops, we need git, too}
  We \emph{could} install git the usual way on macOS\ldots{}
 (by installing the Xcode command line tools)
 \ldots{}but what if we didn't have to?
 nixpkgs to the rescue! And this time we don't even need to ``install'' it!
-\begin{verbatim}
+\begin{minted}[]{shell}
 nix-shell -p git
-\end{verbatim}
+\end{minted}
 \end{frame}
-\begin{frame}[label={sec:orgeac0dfb},fragile]{Let's grab the code}
- \begin{verbatim}
+\begin{frame}[label={sec:orgda8335c},fragile]{Let's grab the code}
+ \begin{minted}[]{shell}
 git clone
 https://github.com/flurie/nix-party-tricks.git
-\end{verbatim}
+\end{minted}
 \end{frame}
-\begin{frame}[label={sec:org0b95c30},fragile]{\ldots{}and then let the magic take hold}
+\begin{frame}[label={sec:org4c593f7},fragile]{\ldots{}and then let the magic take hold}
  direnv holds a \alert{lot} of power, so be careful with what you allow.
 
 Using nix with direnv provides an additional level of security.
 
 Time to take the ride.
 
-\begin{verbatim}
+\begin{minted}[]{shell}
 direnv allow
-\end{verbatim}
+\end{minted}
 \end{frame}
-\begin{frame}[label={sec:orgb2d34a4}]{Tour our new powers}
+\begin{frame}[label={sec:org9615ab6}]{Tour our new powers}
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=6cm]{homer.jpg}
 \caption{I'm in devshell! I'm in normal shell!}
 \end{figure}
 \end{frame}
-\begin{frame}[label={sec:orgda50dd8},fragile]{Enter AWS with train}
+\begin{frame}[label={sec:org4c897dc},fragile]{Enter AWS with train}
  Set the stage for more magic
-\begin{verbatim}
-cp -r "$PRJ_ROOT"/.aws ~/.aws
-\end{verbatim}
+\begin{minted}[]{shell}
+cp -r "$PRJ_ROOT"/support/.aws ~/.aws
+\end{minted}
 Create some new creds and never have to look at them!
 \begin{verbatim}
 Log in to AWS
@@ -172,43 +172,40 @@ Create new programmatic IAM credentials
 Download the csv to our devshell root
 \end{verbatim}
 \end{frame}
-\begin{frame}[label={sec:orgec9a1fe},fragile]{Time to test the thing out}
- \begin{verbatim}
+\begin{frame}[label={sec:org222d06c},fragile]{Time to test the thing out}
+ \begin{minted}[]{shell}
 aws sts get-caller-identity
-\end{verbatim}
+\end{minted}
 \end{frame}
 \section{Second party trick: nix for managing ec2s}
-\label{sec:orga3f615e}
-\begin{frame}[label={sec:org53acbcc},fragile]{Preamble: terraform to stand up the host}
- \begin{verbatim}
+\label{sec:orgd235d8e}
+\begin{frame}[label={sec:org39a5c10},fragile]{Preamble: terraform to stand up the host}
+ \begin{minted}[]{shell}
 # $PRJ_ROOT/terraform/ec2
 terraform init
 terraform apply
-\end{verbatim}
+\end{minted}
 \end{frame}
-\begin{frame}[label={sec:org18b9a86}]{Misc tools for deployment management}
+\begin{frame}[label={sec:org73256d4}]{Misc tools for deployment management}
 \begin{itemize}
 \item cachix (arbitrary caching for nix derivations)
 \item deploy-rs (deploy NixOS to anywhere from anywhere)
 \end{itemize}
 \end{frame}
-\begin{frame}[label={sec:org7f1c6ed},fragile]{NixOS on AWS three ways}
- \#1: AWS instance user data!
-\begin{verbatim}
-# maim.tf
+\begin{frame}[label={sec:org27fd3e0}]{NixOS on AWS three ways}
+\#1: ec2 user data
+\end{frame}
+\begin{frame}[label={sec:org5e0a5f0},fragile]{NixOS on AWS three ways - \#1}
+ \tiny
+\begin{minted}[]{terraform}
+# main.tf
 resource "aws_instance" "nixos" {
-  ami                    = data.aws_ami.nixos-latest.id
-  instance_type          = "t3.micro"
-  key_name               = aws_key_pair.aws_ssh_key.key_name
-  vpc_security_group_ids = [aws_security_group.nixos.id]
+
+  # ...some parts omitted
 
   root_block_device {
     # need this to be big enough to build things
     volume_size = 20
-  }
-
-  tags = {
-    Name = "nix-party-tricks"
   }
 
   user_data = <<END
@@ -222,22 +219,94 @@ resource "aws_instance" "nixos" {
   system.stateVersion = "22.05";
   environment.systemPackages = with pkgs; [ nix-direnv direnv git ];
   networking.hostName = "nixos-aws";
-  nix.extraOptions = "experimental-features = nix-command flakes";
-  programs.bash.interactiveShellInit = ''
-      eval "$($${pkgs.direnv}/bin/direnv hook bash)"
-  '';
 }
 END
 }
-\end{verbatim}
+\end{minted}
 \end{frame}
-\begin{frame}[label={sec:orgfdc2885}]{NixOS on AWS three ways}
+\begin{frame}[label={sec:org0be7cb1},fragile]{NixOS on AWS three ways - \#1}
+ We can now enter the machine.
+
+Make sure to use the IP given by terraform.
+
+\begin{minted}[]{shell}
+ssh -i /tmp/nixos-ssh.pem root@{IP}
+\end{minted}
+\end{frame}
+\begin{frame}[label={sec:org1d247c2},fragile]{NixOS on AWS three ways - \#1}
+ Let's pull down the party tricks repo here\ldots{}
+\begin{minted}[]{shell}
+git clone
+https://github.com/flurie/nix-party-tricks.git
+\end{minted}
+\end{frame}
+\begin{frame}[label={sec:org8af2c8d},fragile]{NixOS on AWS three ways - \#1}
+ \ldots{}and activate the devshell!
+\begin{minted}[]{shell}
+cd nix-party-tricks && direnv allow
+\end{minted}
+\end{frame}
+\begin{frame}[label={sec:orgc1e45f0}]{NixOS on AWS three ways}
 \#2: deploy-rs
 \end{frame}
-\section{Third party trick: nix for managing lambda runtimes}
-\label{sec:orgc4ca418}
-\begin{frame}[label={sec:orgc88e507}]{Preamble: more terraform for my lambda}
+\begin{frame}[label={sec:orgb815bfe},fragile]{NixOS on AWS three ways - \#2}
+ \tiny
+\begin{minted}[]{nix}
+deploy = {
+  nodes = {
+    "aws" = {
+      sshUser = "root";
+      sshOpts = [ "-i" "/tmp/nixos-ssh.pem" ];
+      hostname = "nixos-aws";
+      profiles.hello = {
+        path = deploy-rs.lib.x86_64-linux.activate.custom
+          nixpkgs.legacyPackages.x86_64-linux.hello "./bin/hello";
+      };
+      profiles.system = {
+        path = deploy-rs.lib.x86_64-linux.activate.nixos
+          self.nixosConfigurations.aws;
+      };
+    };
+  };
+};
+\end{minted}
 \end{frame}
-\begin{frame}[label={sec:orgc5c9426}]{Introducing a great nix feature: remote builders}
+\begin{frame}[label={sec:orgfefcf4c},fragile]{NixOS on AWS three ways - \#2}
+ Deploying to hostname, make sure it's in our /etc/hosts
+\begin{minted}[]{shell}
+sudo echo "{IP}  nixos-aws" >> /etc/hosts
+\end{minted}
+\end{frame}
+\begin{frame}[label={sec:org6de3be6},fragile]{NixOS on AWS three ways - \#2}
+ First deploy: ``hello world''
+\begin{minted}[]{shell}
+deploy .#aws.hello
+\end{minted}
+\end{frame}
+\begin{frame}[label={sec:org53f8847},fragile]{NixOS on AWS three ways - \#2}
+ Second deploy: NixOS system running nginx
+\begin{minted}[]{nix}
+{
+  services.nginx = { enable = true; };
+  networking.firewall.allowedTCPPorts = [ 80 ];
+}
+\end{minted}
+Let's deploy!
+\begin{minted}[]{shell}
+deploy .#aws.system
+\end{minted}
+\end{frame}
+\begin{frame}[label={sec:orgd162f06},fragile]{NixOS on AWS three ways - \#2}
+ Now we should get the nginx splash page in a browser
+\begin{verbatim}
+http://nixos-aws
+\end{verbatim}
+\end{frame}
+
+\section{Third party trick: nix for managing lambda runtimes}
+\label{sec:orgf56d707}
+\begin{frame}[label={sec:orgca4d0ee}]{Preamble: more terraform for my lambda}
+\end{frame}
+\begin{frame}[label={sec:orgad30650}]{Introducing a great nix feature: remote builders}
 \end{frame}
 \end{document}

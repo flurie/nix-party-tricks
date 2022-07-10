@@ -103,17 +103,28 @@ resource "aws_instance" "nixos" {
   user_data = <<END
 ### https://nixos.org/channels/nixos-22.05 nixos
 
-{ config, pkgs, modulesPath, ... }:
-{
+{ config, pkgs, modulesPath, ... }: {
   # nix uses same string interpolation as terraform, so we must escape it here
   imports = [ "$${modulesPath}/virtualisation/amazon-image.nix" ];
   ec2.hvm = true;
   system.stateVersion = "22.05";
   networking.hostName = "nixos-aws";
   environment.systemPackages = with pkgs; [ nix-direnv direnv git ];
-  nix.extraOptions = "experimental-features = nix-command flakes";
+  nix = {
+    extraOptions = ''
+      keep-outputs = true
+      keep-derivations = true
+      experimental-features = nix-command flakes
+    '';
+    settings = {
+      substituters = [ "https://flurie.cachix.org" ];
+      trusted-public-keys =
+        [ "flurie.cachix.org-1:A80LCk3Y3l9gkYSdSJvXYV6q/Dh41Tx8nG1yO1j9T5A=" ];
+    };
+  };
+
   programs.bash.interactiveShellInit = ''
-      eval "$($${pkgs.direnv}/bin/direnv hook bash)"
+    eval "$($${pkgs.direnv}/bin/direnv hook bash)"
   '';
 }
 END

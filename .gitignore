@@ -37,3 +37,5 @@ result
 # specific to this
 nixos-ssh.pem
 *_accessKeys.csv
+_minted-presentation
+*.html
