@@ -87,7 +87,7 @@ resource "aws_security_group" "nixos" {
 
 resource "aws_instance" "nixos" {
   ami                    = data.aws_ami.nixos-latest.id
-  instance_type          = "t3.micro"
+  instance_type          = "t3.medium"
   key_name               = aws_key_pair.aws_ssh_key.key_name
   vpc_security_group_ids = [aws_security_group.nixos.id]
 

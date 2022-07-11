@@ -234,3 +234,13 @@ http://nixos-aws
 * Third party trick: nix for managing lambda runtimes
 ** Preamble: more terraform for my lambda
 ** Introducing a great nix feature: remote builders
+
+
+* TODO
+** explicitly install rosetta 2 ~softwareupdate --install-rosetta~
+** explicitly install git ~nix-env -iA nixpkgs.git~
+** explicitly install cachix ~nix-env -iA nixpkgs.cachix~
+** add ~experimental-features = nix-command flakes~ to ~/etc/nix/nix.conf~
+** add ~trusted-users = root flurie~ to ~/etc/nix/nix.conf~
+** explicitly add cachix cache ~cachix use flurie~
+** add host key (maybe? or maybe not with user explicit in deploy)

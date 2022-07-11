@@ -1,4 +1,3 @@
-
 resource "aws_s3_bucket" "nixos-ami" {
   bucket = "flurie-nixos-ami"
   acl    = "private"
@@ -10,7 +9,7 @@ resource "aws_s3_bucket" "nixos-ami" {
 
 resource "aws_iam_role" "vmimport" {
   name               = "vmimport"
-  assume_role_policy = file("./vmie-trust-policy.json")
+  assume_role_policy = file("./templates/vmie-trust-policy.json")
 }
 
 resource "aws_iam_role_policy" "vmimport_policy" {
@@ -28,8 +27,8 @@ resource "aws_iam_role_policy" "vmimport_policy" {
         "s3:GetBucketLocation"
       ],
       "Resource": [
-        "${aws_s3_bucket.images.arn}",
-        "${aws_s3_bucket.images.arn}/*"
+        "${aws_s3_bucket.nixos-ami.arn}",
+        "${aws_s3_bucket.nixos-ami.arn}/*"
       ]
     },
     {
@@ -42,8 +41,8 @@ resource "aws_iam_role_policy" "vmimport_policy" {
         "s3:GetBucketAcl"
       ],
       "Resource": [
-        "${aws_s3_bucket.images.arn}",
-        "${aws_s3_bucket.images.arn}/*"
+        "${aws_s3_bucket.nixos-ami.arn}",
+        "${aws_s3_bucket.nixos-ami.arn}/*"
       ]
     },
     {
@@ -62,7 +61,7 @@ EOF
 }
 
 resource "aws_s3_bucket_object" "nixos_22_05" {
-  bucket = aws_s3_bucket.images.bucket
+  bucket = aws_s3_bucket.nixos-ami.bucket
   key    = "nixos-22.05-nginx.vhd"
 
   source = "./result/nixos-amazon-image-22.11.20220702.660ac43-x86_64-linux.vhd"
@@ -137,7 +136,7 @@ resource "local_file" "aws_ssh_key" {
 ### Primary AWS resources ###
 
 resource "aws_security_group" "nixos" {
-  name        = "nixos"
+  name        = "nixos-ami"
   description = "Basic setup for nixos aws demo"
   vpc_id      = aws_default_vpc.default.id
 
@@ -178,7 +177,7 @@ resource "aws_instance" "nixos" {
   key_name               = aws_key_pair.aws_ssh_key.key_name
 
   root_block_device {
-    volume_size = 20 # GiB
+    volume_size = 20
   }
 
   tags = {

@@ -124,7 +124,7 @@
               ec2.hvm = true;
               system.stateVersion = "22.05";
             })
-            ({ config, ... }: rec {
+            ({ config, ... }: {
               networking.hostName = "nixos-aws";
               # Just enabling nginx will provide a config with a set of
               # sane defaults: serving the standard nginx static site on
@@ -132,6 +132,19 @@
               services.nginx.enable = true;
               # The firewall is on by default, so we have to poke a hole in it.
               networking.firewall.allowedTCPPorts = [ 80 ];
+              nix = {
+                extraOptions = ''
+                  keep-outputs = true
+                  keep-derivations = true
+                  experimental-features = nix-command flakes
+                '';
+                settings = {
+                  substituters = [ "https://flurie.cachix.org" ];
+                  trusted-public-keys = [
+                    "flurie.cachix.org-1:A80LCk3Y3l9gkYSdSJvXYV6q/Dh41Tx8nG1yO1j9T5A="
+                  ];
+                };
+              };
             })
           ];
         });
@@ -149,7 +162,7 @@
             # when specifying _systemPackages_.
             environment.systemPackages = with pkgs; [ direnv git ];
             programs.bash.interactiveShellInit = ''
-              eval "$($''${pkgs.direnv}/bin/direnv hook bash)"
+              eval "$(${pkgs.direnv}/bin/direnv hook bash)"
             '';
           })
           ({ modulesPath, ... }: {
@@ -194,6 +207,7 @@
             # object, so we set them so that they only need to be written
             # once, keeping our code DRY.
             sshUser = "root";
+            user = "root";
             sshOpts = [ "-i" "/tmp/nixos-ssh.pem" ];
             # NOTE: we can not deal with the IPs in a demo by adding it to
             # /etc/hosts, but I recommend finding a more permanent solution
