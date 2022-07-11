@@ -85,11 +85,9 @@
           packages.nixPartyTricksDocs = pkgs.stdenv.mkDerivation {
             name = "nix-party-tricks-docs";
             buildInputs = [ pkgs.pandoc ];
-            src = builtins.filterSource (path: type:
-              type == "regular" && (baseNameOf path == "presentation.org"
-                || baseNameOf path == "homer.jpg")) ./docs;
+            src = ./docs;
             buildPhase = ''
-              pandoc -f org -t html presentation.org > index.html
+              ${pkgs.pandoc}/bin/pandoc -f org -t html presentation.org > index.html
             '';
             installPhase = ''
               mkdir -p $out/www
