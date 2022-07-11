@@ -164,6 +164,9 @@
             programs.bash.interactiveShellInit = ''
               eval "$(${pkgs.direnv}/bin/direnv hook bash)"
             '';
+            programs.bash.shellInit = ''
+              eval "$(${pkgs.direnv}/bin/direnv hook bash)"
+            '';
           })
           ({ modulesPath, ... }: {
             # NixOS provides an attribute _modulesPath_ so the OS doesn't have
