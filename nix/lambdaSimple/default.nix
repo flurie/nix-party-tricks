@@ -1,7 +1,7 @@
 { pkgs ? import <nixpkgs> { system = "aarch64-linux"; } }:
 
 let
-  pythonEnv = pkgs.python39.withPackages (ps: with ps; [ awslambdaric ]);
+  pythonEnv = pkgs.python39.withPackages (ps: with ps; [ awslambdaric pandas ]);
   entrypoint = pkgs.writeScriptBin "entrypoint.sh" ''
     #!${pkgs.bash}/bin/bash
     if [ -z "$AWS_LAMBDA_RUNTIME_API" ]; then

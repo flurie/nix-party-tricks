@@ -84,7 +84,7 @@ Green means go! Do as I say.
 :PROPERTIES:
 :BEAMER_env: exampleblock
 :END:
- ~cachix use flurie~
+ ~cachix use flurie && sudo pkill nix-daemon~
 * /Extremely/ abbreviated intro to nix
 ** Nix the First: Language
 Main features:
@@ -306,12 +306,21 @@ deploy = {
 };
 #+end_src
 ** NixOS on AWS three ways - #2
-*** Deploying to hostname, make sure it's in our /etc/hosts
+*** let's make sure it's in our /etc/hosts for later
 :PROPERTIES:
 :BEAMER_env: exampleblock
 :END:
 #+begin_src shell
 sudo echo "{IP}  nixos-aws" >> /etc/hosts
+#+end_src
+** NixOS on AWS three ways - #2
+*** copy the key over so we can deploy from the machine, then shell in
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
+#+begin_src shell
+scp -i /tmp/nixos-ssh.pem /tmp/nixos-ssh.pem root@nixos-aws:~/nix-party-tricks/
+ssh -i /tmp/nixos-ssh.pem root@nixos-aws
 #+end_src
 ** NixOS on AWS three ways - #2
 *** First deploy: "hello world"
@@ -321,6 +330,7 @@ sudo echo "{IP}  nixos-aws" >> /etc/hosts
 #+begin_src shell
 # the -s skips the checks, saving us some time
 # don't do this at home
+cd nix-party-tricks
 deploy .#aws.hello -s
 #+end_src
 ** NixOS on AWS three ways - #2
@@ -393,6 +403,7 @@ ssh -i /tmp/nixos-ssh.pem root@nixos-aws
 :END:
 #+begin_src shell
 cd $PRJ_ROOT/terraform/ami
+nix build .#awsImage
 terraform init
 terraform apply
 #+end_src
@@ -477,8 +488,6 @@ pkgs.dockerTools.buildLayeredImageWithNixDb {
 }
 #+end_src
 ** Build and push
-*** TODO setup colima?
-*** TODO run on build machine??
 *** Build the image
 :PROPERTIES:
 :BEAMER_env: exampleblock
@@ -486,12 +495,21 @@ pkgs.dockerTools.buildLayeredImageWithNixDb {
 #+latex: \tiny
 #+begin_src shell
 # starting on the build machine
-nix build .#packages.x86-linux.lambdaSimple
+nix build .#lambdaSimple
 # all nix builds get a symlink to ./result by default.
 # since this is a raw archived OCI image, we can load the path directly.
 docker load < result
 #+end_src
 ** Push the image
+*** Docker login to ECR
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
+#+begin_src shell
+aws ecr get-login-password --region us-east-2 | \
+    docker login --username AWS --password-stdin \
+    "$(aws sts get-caller-identity | jq -r '.Account').ecr.region.amazonaws.com"
+#+end_src
 *** now tag and push to ECR
 :PROPERTIES:
 :BEAMER_env: exampleblock
@@ -503,7 +521,6 @@ scripts/tag_and_push_lambda.sh
 #+begin_src shell
 #! /usr/bin/env nix-shell
 #! nix-shell -i bash -p jq
-
 docker tag "$(docker images nix-lambda --format '{{.ID}}')" \
   "$(aws sts get-caller-identity | jq -r '.Account').dkr.ecr.us-east-2.amazonaws.com/nix:latest"
 docker push \
@@ -519,3 +536,142 @@ cd $PRJ_ROOT/terraform/lambda
 terraform init
 terraform apply
 #+end_src
+** See the results
+*** Calling our function
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
+#+begin_src shell
+curl ${function_url}
+#+end_src
+** Lambda Two
+Let's add some real packages
+*** The setup
+#+latex: \tiny
+#+begin_src nix
+  mangum = with pkgs.python39.pkgs;
+    buildPythonPackage rec {
+      pname = "mangum";
+      version = "0.15.0";
+
+      src = fetchPypi {
+        inherit pname version;
+        sha256 = "sha256-EuhIBhmLI7vVpUubacGu88YhdzRyGbtXyOwRS4prhTc=";
+      };
+
+      buildInputs = [ typing-extensions ];
+
+      pythonImportsCheck = [ "mangum" ];
+
+      meta = with pkgs.lib; {
+        description = "AWS Lambda support for ASGI applications";
+        homepage = "https://github.com/jordaneremieff/mangum";
+        license = licenses.mit;
+        maintainers = with maintainers; [ ];
+      };
+    };
+  pythonEnv =
+    pkgs.python39.withPackages (ps: with ps; [ awslambdaric mangum fastapi ]);
+#+end_src
+** Lambda Two (con't)
+*** The app
+#+latex: \tiny
+#+begin_src nix
+  app = pkgs.writeScriptBin "app.py" ''
+    #!${pythonEnv}/bin/python3
+
+    from fastapi import FastAPI
+    from mangum import Mangum
+
+    app = FastAPI()
+
+
+    @app.get("/")
+    def read_root():
+        return {"Hello": "World"}
+
+
+    @app.get("/items/{item_id}")
+    def read_item(item_id: int, q: str = None):
+        return {"item_id": item_id, "q": q}
+
+    handler = Mangum(app, lifespan="off")
+  '';
+#+end_src
+** Lambda Two - Up and running
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
+#+latex: \tiny
+#+begin_src shell
+nix build .#lambdaApi
+docker load < result
+tag_and_push_lambda
+#+end_src
+** And now we cheat
+*** For the sake of simplicity
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
+Let's just refresh the image in the console.
+** Lambda Two - Testing
+*** Let's try it in a browser
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
+- ~/~ should get us a hello world
+- ~/docs~ should get us the fastapi swagger
+- ~/items/foo~ should get us some stuff back
+** Lambda Three
+Let's do something with our packages.
+The setup is the same, but the app is different.
+*** The setup
+#+latex: \tiny
+#+begin_src nix
+  app = pkgs.writeScriptBin "app.py" ''
+    #!${pythonEnv}/bin/python3
+
+    from fastapi import FastAPI
+    from fastapi.staticfiles import StaticFiles
+    from mangum import Mangum
+
+    app = FastAPI()
+
+
+    @app.get("/")
+    def read_root():
+        return {"Hello": "World"}
+
+    app.mount("/nixdocs", StaticFiles(directory="${nixPartyTricksDocs}/www", html=True),
+        name="nixdocs")
+
+    handler = Mangum(app, lifespan="off")
+  '';
+# ...
+#+end_src
+** Lambda Two - Up and running
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
+#+latex: \tiny
+#+begin_src shell
+nix build .#lambdaDocs
+docker load < result
+tag_and_push_lambda
+#+end_src
+** I will repeat and cheat once again
+*** Just do this
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
+Refresh the image once more.
+** Lambda Three - Testing
+*** Let's try it in a browser
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
+- ~/nixdocs/index.html~ should have something very interesting for us. I wonder what it could be?
+** That's it. That's the talk.
+#+ATTR_LaTeX: :width 2cm
+#+CAPTION: Any questions?
+https://static.onecms.io/wp-content/uploads/sites/13/2016/11/01/pumkpins.jpg

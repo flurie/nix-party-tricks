@@ -5,7 +5,7 @@ data "aws_region" "this" {}
 
 
 module "lambda_function_container_image" {
-  architectures = ["arm64"]
+  architectures = ["x86_64"]
   version       = "3.3.1"
   source        = "terraform-aws-modules/lambda/aws"
 

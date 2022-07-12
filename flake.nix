@@ -127,6 +127,12 @@
               # and can lead to confusion, but it is almost always fine
               # when specifying _systemPackages_.
               environment.systemPackages = with pkgs; [ direnv git ];
+              programs.bash.interactiveShellInit = ''
+                eval "$(${pkgs.direnv}/bin/direnv hook bash)"
+              '';
+              programs.bash.shellInit = ''
+                eval "$(${pkgs.direnv}/bin/direnv hook bash)"
+              '';
             })
             ({ modulesPath, ... }: {
               # NixOS provides an attribute _modulesPath_ so the OS doesn't have
@@ -156,6 +162,7 @@
                   ];
                 };
               };
+              virtualisation.docker.enable = true;
             })
           ];
         });
