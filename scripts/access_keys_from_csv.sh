@@ -10,6 +10,4 @@
 #   "Expiration": "ISO8601 timestamp when the credentials expire" (explicitly optional)
 # }
 
-# jq -nrR '[inputs | rtrimstr("\r") | ./","][1] | ["[default]", "aws_access_key_id = \(.[0])", "aws_secret_access_key = \(.[1])"] | join("\n")' "$PRJ_ROOT"/"$AWS_USERNAME"_accessKeys.csv
-
 jq -nrcR '[inputs | rtrimstr("\r") | ./","][1] | { Version: 1, AccessKeyId: .[0], SecretAccessKey: .[1] }' "$PRJ_ROOT"/"$AWS_USERNAME"_accessKeys.csv

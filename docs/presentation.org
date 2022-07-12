@@ -52,20 +52,38 @@ Green means go! Do as I say.
 - code is public: [[https://github.com/flurie/nix-party-tricks]]
 ** Let's install nix!
 *** Installing nix
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
 - Go to [[https://nixos.org]]
 - select *Download*
 - Follow multi-user installation instructions (unless you're on something weird like WSL)
 ** And let's install some things to make our lives easier (and this demo shorter)
 *** Rosetta 2
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
 ~softwareupdate --install-rosetta~
 *** git
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
  ~nix-env -iA nixpkgs.git~
 *** cachix
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
  ~nix-env -iA nixpkgs.cachix~
 *** add some stuff to ~/etc/nix/nix.conf~
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
    ~experimental-features = nix-command flakes~
    ~trusted-users = root $(whoami)~
 *** explicitly add cachix cache
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
  ~cachix use flurie~
 * /Extremely/ abbreviated intro to nix
 ** Nix the First: Language
@@ -390,7 +408,7 @@ Declarative build systems are ruthless.
 :BEAMER_env: exampleblock
 :END:
 #+begin_example
-visit http://nixos-aws in a browser
+visit http://nixos-aws-ami in a browser
 #+end_example
 
 Third way done!
@@ -417,4 +435,83 @@ Providers that can make it happen expect to build with docker.
 #+begin_src shell
 aws ecr create-repository \
     --repository-name nix
+#+end_src
+** Lambda One
+*** The setup
+#+latex: \tiny
+#+begin_src nix
+let
+  pythonEnv = pkgs.python39.withPackages (ps: with ps; [ awslambdaric ]);
+  entrypoint = pkgs.writeScriptBin "entrypoint.sh" ''
+    #!${pkgs.bash}/bin/bash
+    if [ -z "$AWS_LAMBDA_RUNTIME_API" ]; then
+      exec ${pkgs.aws-lambda-rie}/bin/aws-lambda-rie ${pythonEnv}/bin/python3 -m awslambdaric $@
+    else
+      exec ${pythonEnv}/bin/python3 -m awslambdaric $@
+    fi
+  '';
+  app = pkgs.writeScriptBin "app.py" ''
+    #!${pythonEnv}/bin/python3
+
+    import sys
+
+    def handler(event, context):
+        return "Hello from AWS Lambda using Python" + sys.version + "!"
+  '';
+in
+# ...
+#+end_src
+** Lambda One (con't)
+*** The image
+#+latex: \tiny
+#+begin_src nix
+pkgs.dockerTools.buildLayeredImageWithNixDb {
+  name = "nix-lambda";
+  tag = "latest";
+  contents = [ pkgs.bash pkgs.coreutils pythonEnv app pkgs.aws-lambda-rie ];
+  config = {
+    Entrypoint = [ "${entrypoint}/bin/entrypoint.sh" ];
+    Cmd = [ "app.handler" ];
+    WorkingDir = "${app}/bin";
+  };
+}
+#+end_src
+** Build and push
+*** TODO setup colima?
+*** TODO run on build machine??
+*** Build the image
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
+#+begin_src shell
+# starting on the build machine
+nix build .#packages.x86-linux.lambdaSimple
+# all nix builds get a symlink to ./result by default.
+# since this is a raw archived OCI image, we can load the path directly.
+docker load < result
+#+end_src
+** Push the image
+*** now tag and push to ECR
+#+begin_example
+scripts/tag_and_push_lambda.sh
+#+end_example
+#+latex: \tiny
+#+begin_src shell
+#! /usr/bin/env nix-shell
+#! nix-shell -i bash -p jq
+
+docker tag "$(docker images nix-lambda --format '{{.ID}}')" \
+  "$(aws sts get-caller-identity | jq -r '.Account').dkr.ecr.us-east-2.amazonaws.com/nix:latest"
+docker push \
+  "$(aws sts get-caller-identity | jq -r '.Account').dkr.ecr.us-east-2.amazonaws.com/nix:latest"
+#+end_src
+** Now terraform the rest
+*** More terraform
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
+#+begin_src shell
+cd $PRJ_ROOT/terraform/lambda
+terraform init
+terraform apply
 #+end_src

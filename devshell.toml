@@ -15,6 +15,12 @@ help = "credential process helper for aws"
 category = "helpers"
 
 [[commands]]
+name = "tag_and_push_lambda"
+command = "${PRJ_ROOT}/scripts/tag_and_push_lambda.sh"
+help = "credential process helper for aws"
+category = "helpers"
+
+[[commands]]
 package = "docker"
 
 [[env]]

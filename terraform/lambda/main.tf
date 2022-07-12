@@ -16,4 +16,6 @@ module "lambda_function_container_image" {
 
   image_uri    = "${data.aws_caller_identity.this.account_id}.dkr.ecr.${data.aws_region.this.name}.amazonaws.com/nix:latest"
   package_type = "Image"
+
+  create_lambda_function_url = true
 }
