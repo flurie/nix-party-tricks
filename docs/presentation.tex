@@ -1,4 +1,4 @@
-% Created 2022-07-10 Sun 16:49
+% Created 2022-07-12 Tue 10:27
 \documentclass[bigger]{beamer}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -16,6 +16,8 @@
 \author{Alexander Flurie}
 \date{\textit{<2022-07-12 Tue>}}
 \title{Nix party tricks}
+\subtitle{Building EC2s, images, and lambda packages with NixOS}
+\institute{Pittsburgh AWS User Group}
 \hypersetup{
  pdfauthor={Alexander Flurie},
  pdftitle={Nix party tricks},
@@ -30,20 +32,71 @@
 \tableofcontents
 \end{frame}
 
+\metroset{block=fill}
 
 \section{Preamble}
-\label{sec:orgcf4ae11}
-\begin{frame}[label={sec:orge93ee95}]{Nix is magic}
+\label{sec:org0f6b2dc}
+\begin{frame}[label={sec:org15caaa2}]{Nix is magic}
 Surprise, this is a magic show!
 
 Nix is a special kind of magic for specifying pretty much any output you could want.
 \end{frame}
-\begin{frame}[label={sec:orgb442b5b}]{Nothing up my sleeve}
+\begin{frame}[label={sec:org6086051}]{Nothing up my sleeve\ldots{}}
 Behold, a fresh VM.
+
+I am clicking through these things because I am very serious.
+\end{frame}
+\begin{frame}[label={sec:org1e70227}]{\ldots{}but cards on the table}
+There's always something to install when you start.
+\end{frame}
+\begin{frame}[label={sec:org1089d9e}]{For those playing along at home}
+This text is expository, written for flavor and background
+\begin{alertblock}{This text highlights an important definition}
+Satoshi Nakamoto: last known alias of Charles Ponzi
+\end{alertblock}
+\begin{exampleblock}{This text is instructional}
+Green means go! Do as I say.
+\end{exampleblock}
+\end{frame}
+\section{Demo Overview}
+\label{sec:orgfc89c11}
+\begin{frame}[label={sec:orgcb8c719}]{Purpose}
+\begin{itemize}
+\item survey of a bunch of common problems and demonstrate solutions with nix
+\item whirlwind tour of some great nix ecosystem tooling
+\item code is public: \url{https://github.com/flurie/nix-party-tricks}
+\end{itemize}
+\end{frame}
+\begin{frame}[label={sec:org01fd7a2}]{Let's install nix!}
+\begin{block}{Installing nix}
+\begin{itemize}
+\item Go to \url{https://nixos.org}
+\item select \alert{Download}
+\item Follow multi-user installation instructions (unless you're on something weird like WSL)
+\end{itemize}
+\end{block}
+\end{frame}
+\begin{frame}[label={sec:orgcc90896},fragile]{And let's install some things to make our lives easier (and this demo shorter)}
+ \begin{block}{Rosetta 2}
+\texttt{softwareupdate -{}-install-rosetta}
+\end{block}
+\begin{block}{git}
+\texttt{nix-env -iA nixpkgs.git}
+\end{block}
+\begin{block}{cachix}
+\texttt{nix-env -iA nixpkgs.cachix}
+\end{block}
+\begin{block}{add some stuff to \texttt{/etc/nix/nix.conf}}
+\texttt{experimental-features = nix-command flakes}
+\texttt{trusted-users = root \$(whoami)}
+\end{block}
+\begin{block}{explicitly add cachix cache}
+\texttt{cachix use flurie}
+\end{block}
 \end{frame}
 \section{\emph{Extremely} abbreviated intro to nix}
-\label{sec:orgbdfe28d}
-\begin{frame}[label={sec:org543f6c4}]{Nix the First: Language}
+\label{sec:orgca9aad0}
+\begin{frame}[label={sec:org515df34}]{Nix the First: Language}
 Main features:
 \begin{itemize}
 \item functional
@@ -53,7 +106,7 @@ Main features:
 \item Haskell influence (though much divergence since)
 \end{itemize}
 \end{frame}
-\begin{frame}[label={sec:org44d97cf}]{Nix the First: Language (con't)}
+\begin{frame}[label={sec:orgd803ad2}]{Nix the First: Language (con't)}
 Quirky type system:
 \begin{itemize}
 \item strings have native multiline support
@@ -63,7 +116,7 @@ Quirky type system:
 \item first-class functions
 \end{itemize}
 \end{frame}
-\begin{frame}[label={sec:orgbbc45e5}]{Nix the Second: Package Manager}
+\begin{frame}[label={sec:org94595e1}]{Nix the Second: Package Manager}
 nixpkgs
 \begin{itemize}
 \item Fundamental unit: the derivation
@@ -72,13 +125,14 @@ nixpkgs
 \item Many smaller ecosystems, especially by language (2nix)
 \end{itemize}
 \end{frame}
-\begin{frame}[label={sec:org28569cb}]{Nix the Second: Package Manager (con't)}
-The Dirty Secret:
-\begin{center}
+\begin{frame}[label={sec:org9d0e11d}]{Nix the Second: Package Manager (con't)}
+\begin{figure}[htbp]
+\centering
 \includegraphics[width=.9\linewidth]{/Users/flurie/.emacs.d/.local/cache/org-persist/7d/4ab595-074b-42d2-beb8-1af9e6a32fc6-7a64e2c687f385d1a58d43451063534f.png}
-\end{center}
+\caption{The Dirty Secret}
+\end{figure}
 \end{frame}
-\begin{frame}[label={sec:orga8e71c0}]{Nix the Third: Linux Distribution}
+\begin{frame}[label={sec:orgf0ce0dd}]{Nix the Third: Linux Distribution}
 NixOS
 \begin{itemize}
 \item Built on top of nixpkgs and systemd
@@ -86,116 +140,122 @@ NixOS
 \item Adds in modules for system-level configurability
 \end{itemize}
 \end{frame}
-\begin{frame}[label={sec:org1a2a2e4}]{Nix the Fourth: \emph{misc} tooling}
+\begin{frame}[label={sec:org7036745},fragile]{Nix the Fourth: \emph{misc} tooling}
+ \begin{alertblock}{Tools worth knowing}
 \begin{itemize}
-\item home-manager (nix for \$HOME)
-\item nix-darwin (nix for macOS)
-\item cachix (arbitrary caching for nix derivations)
-\item Hercules CI (CI/CD for nix derivations)
+\item home-manager: nix for \texttt{\$HOME}
+\item nix-darwin: nix for macOS
+\item cachix: arbitrary caching for nix derivations
+\item Hercules CI: CI/CD for nix derivations
 \end{itemize}
-\end{frame}
-\section{Demo Overview}
-\label{sec:org3c81b7a}
-\begin{frame}[label={sec:org6f9fc42}]{Purpose}
-\begin{itemize}
-\item survey of a bunch of common problems and demonstrate solutions with nix
-\item whirlwind tour of some great nix ecosystem tooling
-\item code is public
-\end{itemize}
-\end{frame}
-\begin{frame}[label={sec:org6a09cd0}]{Let's install nix!}
-\begin{itemize}
-\item Go to \url{https://nixos.org}
-\item select \alert{Download}
-\item Follow multi-user installation instructions (unless you're on something weird like WSL)
-\end{itemize}
+\end{alertblock}
 \end{frame}
 \section{First party trick: nix for managing development environments}
-\label{sec:org872305d}
-\begin{frame}[label={sec:orge86b34f}]{Misc tools for environment management}
+\label{sec:org6d72be3}
+\begin{frame}[label={sec:orge642505}]{Misc tools for environment management}
+\begin{alertblock}{Tools we will use in this section}
 \begin{itemize}
 \item direnv: automate environment switching in shell
 \item devshell: manage all your development tools per-project with a simple configuration file
 \end{itemize}
+\end{alertblock}
 \end{frame}
-\begin{frame}[label={sec:org9acb822}]{Let's install direnv!}
+\begin{frame}[label={sec:org96e66ad}]{Let's install direnv!}
+\begin{exampleblock}{Installing direnv}
 \begin{itemize}
 \item Go to \url{https://direnv.net/\#basic-installation}
 \item Follow the NixOS instructions (because I'm not installing Homebrew, boo!) for non-NixOS systems
 \item Hook direnv into shell
 \end{itemize}
+\end{exampleblock}
 \end{frame}
-\begin{frame}[label={sec:org7437e7e},fragile]{Oops, we need git, too}
- We \emph{could} install git the usual way on macOS\ldots{}
-(by installing the Xcode command line tools)
-\ldots{}but what if we didn't have to?
-nixpkgs to the rescue! And this time we don't even need to ``install'' it!
+\begin{frame}[label={sec:orgcc8d6b1},fragile]{Let's grab the code\ldots{}}
+ \begin{exampleblock}{Clone me on GitHub}
 \begin{minted}[]{shell}
-nix-shell -p git
-\end{minted}
-\end{frame}
-\begin{frame}[label={sec:orgda8335c},fragile]{Let's grab the code}
- \begin{minted}[]{shell}
 git clone
 https://github.com/flurie/nix-party-tricks.git
 \end{minted}
+\end{exampleblock}
 \end{frame}
-\begin{frame}[label={sec:org4c593f7},fragile]{\ldots{}and then let the magic take hold}
+\begin{frame}[label={sec:org2d01d3a},fragile]{\ldots{}and then let the magic take hold}
  direnv holds a \alert{lot} of power, so be careful with what you allow.
 
 Using nix with direnv provides an additional level of security.
 
-Time to take the ride.
-
+\begin{exampleblock}{Time to take the ride.}
 \begin{minted}[]{shell}
 direnv allow
 \end{minted}
+\end{exampleblock}
 \end{frame}
-\begin{frame}[label={sec:org9615ab6}]{Tour our new powers}
+\begin{frame}[label={sec:org71a6db5}]{Tour our new powers}
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=6cm]{homer.jpg}
+\includegraphics[width=6cm]{/Users/flurie/.emacs.d/.local/cache/org-persist/89/fad068-fc50-40bb-9c4b-0aac2d6453f6-4bf5547748a4e01b63da0ea20380add2.jpg}
 \caption{I'm in devshell! I'm in normal shell!}
 \end{figure}
 \end{frame}
-\begin{frame}[label={sec:org4c897dc},fragile]{Enter AWS with train}
- Set the stage for more magic
+\begin{frame}[label={sec:orgc6acc02},fragile]{A note about creds}
+ \begin{alertblock}{Be safe}
+\begin{itemize}
+\item \alert{Never} store credentials in a long-lived plaintext config file!
+\item use \texttt{credential\_process} to grab creds safely
+\end{itemize}
+\begin{verbatim}
+# ~/.aws/credentials
+
+[default]
+credential_process = access_keys_from_csv
+\end{verbatim}
+\end{alertblock}
+\end{frame}
+\begin{frame}[label={sec:org4b05944},fragile]{Enter AWS with train}
+ \begin{exampleblock}{Set the stage for more magic}
 \begin{minted}[]{shell}
 cp -r "$PRJ_ROOT"/support/.aws ~/.aws
 \end{minted}
-Create some new creds and never have to look at them!
+\end{exampleblock}
+\begin{exampleblock}{You can try this at home, but don't leave the files sitting around.}
 \begin{verbatim}
-Log in to AWS
+Log in to AWS console
 
 Create new programmatic IAM credentials
 
 Download the csv to our devshell root
 \end{verbatim}
+\end{exampleblock}
 \end{frame}
-\begin{frame}[label={sec:org222d06c},fragile]{Time to test the thing out}
- \begin{minted}[]{shell}
+\begin{frame}[label={sec:org612ef63},fragile]{Time to test the thing out}
+ \begin{exampleblock}{Putting it all together}
+\begin{minted}[]{shell}
 aws sts get-caller-identity
 \end{minted}
+\end{exampleblock}
 \end{frame}
 \section{Second party trick: nix for managing ec2s}
-\label{sec:orgd235d8e}
-\begin{frame}[label={sec:org39a5c10},fragile]{Preamble: terraform to stand up the host}
- \begin{minted}[]{shell}
-# $PRJ_ROOT/terraform/ec2
+\label{sec:orgc3056ef}
+\begin{frame}[label={sec:org1289c55},fragile]{Preamble}
+ \begin{exampleblock}{terraform to stand up the host}
+\begin{minted}[]{shell}
+cd $PRJ_ROOT/terraform/ec2
 terraform init
 terraform apply
 \end{minted}
+\end{exampleblock}
 \end{frame}
-\begin{frame}[label={sec:org73256d4}]{Misc tools for deployment management}
+\begin{frame}[label={sec:org24c23c4}]{Misc tools for deployment management}
+\begin{alertblock}{Tools we will use in this section}
 \begin{itemize}
-\item cachix (arbitrary caching for nix derivations)
-\item deploy-rs (deploy NixOS to anywhere from anywhere)
+\item cachix: arbitrary caching for nix derivations
+\item deploy-rs: deploy NixOS to anywhere from anywhere
+\item nixos-generators: generate NixOS machine images of any kind
 \end{itemize}
+\end{alertblock}
 \end{frame}
-\begin{frame}[label={sec:org27fd3e0}]{NixOS on AWS three ways}
+\begin{frame}[label={sec:org55618b7}]{NixOS on AWS three ways}
 \#1: ec2 user data
 \end{frame}
-\begin{frame}[label={sec:org5e0a5f0},fragile]{NixOS on AWS three ways - \#1}
+\begin{frame}[label={sec:orgea6880c},fragile]{NixOS on AWS three ways - \#1}
  \tiny
 \begin{minted}[]{terraform}
 # main.tf
@@ -224,32 +284,37 @@ END
 }
 \end{minted}
 \end{frame}
-\begin{frame}[label={sec:org0be7cb1},fragile]{NixOS on AWS three ways - \#1}
+\begin{frame}[label={sec:org07932f8},fragile]{NixOS on AWS three ways - \#1}
  We can now enter the machine.
-
-Make sure to use the IP given by terraform.
-
+\begin{block}{terraform output into ssh config file + hosts file line?}
+\end{block}
+\begin{exampleblock}{Make sure to use the IP given by terraform.}
 \begin{minted}[]{shell}
 ssh -i /tmp/nixos-ssh.pem root@{IP}
 \end{minted}
+\end{exampleblock}
 \end{frame}
-\begin{frame}[label={sec:org1d247c2},fragile]{NixOS on AWS three ways - \#1}
- Let's pull down the party tricks repo here\ldots{}
+\begin{frame}[label={sec:org5fe48e1},fragile]{NixOS on AWS three ways - \#1}
+ \begin{exampleblock}{Let's pull down the party tricks repo here as well\ldots{}}
 \begin{minted}[]{shell}
 git clone
 https://github.com/flurie/nix-party-tricks.git
 \end{minted}
+\end{exampleblock}
 \end{frame}
-\begin{frame}[label={sec:org8af2c8d},fragile]{NixOS on AWS three ways - \#1}
- \ldots{}and activate the devshell!
+\begin{frame}[label={sec:org77d9ad0},fragile]{NixOS on AWS three ways - \#1}
+ \begin{exampleblock}{\ldots{}and activate the devshell!}
 \begin{minted}[]{shell}
 cd nix-party-tricks && direnv allow
 \end{minted}
+
+First way done!
+\end{exampleblock}
 \end{frame}
-\begin{frame}[label={sec:orgc1e45f0}]{NixOS on AWS three ways}
+\begin{frame}[label={sec:org9368f8f}]{NixOS on AWS three ways}
 \#2: deploy-rs
 \end{frame}
-\begin{frame}[label={sec:orgb815bfe},fragile]{NixOS on AWS three ways - \#2}
+\begin{frame}[label={sec:orgbc268f9},fragile]{NixOS on AWS three ways - \#2}
  \tiny
 \begin{minted}[]{nix}
 deploy = {
@@ -271,19 +336,23 @@ deploy = {
 };
 \end{minted}
 \end{frame}
-\begin{frame}[label={sec:orgfefcf4c},fragile]{NixOS on AWS three ways - \#2}
- Deploying to hostname, make sure it's in our /etc/hosts
+\begin{frame}[label={sec:org2ebceb9},fragile]{NixOS on AWS three ways - \#2}
+ \begin{exampleblock}{Deploying to hostname, make sure it's in our /etc/hosts}
 \begin{minted}[]{shell}
 sudo echo "{IP}  nixos-aws" >> /etc/hosts
 \end{minted}
+\end{exampleblock}
 \end{frame}
-\begin{frame}[label={sec:org6de3be6},fragile]{NixOS on AWS three ways - \#2}
- First deploy: ``hello world''
+\begin{frame}[label={sec:org0d680ff},fragile]{NixOS on AWS three ways - \#2}
+ \begin{exampleblock}{First deploy: ``hello world''}
 \begin{minted}[]{shell}
-deploy .#aws.hello
+# the -s skips the checks, saving us some time
+# don't do this at home
+deploy .#aws.hello -s
 \end{minted}
+\end{exampleblock}
 \end{frame}
-\begin{frame}[label={sec:org53f8847},fragile]{NixOS on AWS three ways - \#2}
+\begin{frame}[label={sec:org6bfa5e4},fragile]{NixOS on AWS three ways - \#2}
  Second deploy: NixOS system running nginx
 \begin{minted}[]{nix}
 {
@@ -291,22 +360,92 @@ deploy .#aws.hello
   networking.firewall.allowedTCPPorts = [ 80 ];
 }
 \end{minted}
-Let's deploy!
+\begin{exampleblock}{Let's deploy!}
 \begin{minted}[]{shell}
-deploy .#aws.system
+deploy .#aws.system -s
+\end{minted}
+\end{exampleblock}
+\end{frame}
+\begin{frame}[label={sec:orgbddd3b2},fragile]{NixOS on AWS three ways - \#2}
+ \begin{exampleblock}{Now we should get the nginx splash page in a browser}
+\begin{verbatim}
+visit http://nixos-aws in a browser
+\end{verbatim}
+
+Second way done!
+\end{exampleblock}
+\end{frame}
+\begin{frame}[label={sec:org3b60bf2}]{NixOS on AWS three ways}
+\#3: nixos-generators
+\end{frame}
+\begin{frame}[label={sec:org158364c},fragile]{NixOS on AWS three ways \#3}
+ \tiny
+\begin{minted}[]{nix}
+packages.x86_64-linux.awsImage = let system = "x86_64-linux";
+      in nixos-generators.nixosGenerate {
+        pkgs = nixpkgs.legacyPackages.${system};
+        modules = [
+          # new hostname for new machine
+          networking.hostName = "nixos-aws-ami";
+          # mostly stuff you've seen before...
+            services.nginx = {
+              enable = true;
+              virtualHosts.${networking.hostName} = {
+                # except now we're serving something special
+                root = "${self.packages."${system}".default}/www";
+              };
+            };
+        ];
+        format = "amazon";
+};
 \end{minted}
 \end{frame}
-\begin{frame}[label={sec:orgd162f06},fragile]{NixOS on AWS three ways - \#2}
- Now we should get the nginx splash page in a browser
+\begin{frame}[label={sec:org7143085},fragile]{NixOS on AWS three ways - \#3}
+ Let's use our shiny new ec2  for this!
+
+\begin{exampleblock}{But before we do, let's make our user creds available for the sake of simplicity.}
+\tiny
+\begin{minted}[]{shell}
+# from our local
+scp -i /tmp/nixos-ssh.pem ./$(whoami)_accessKeys.csv \
+    root@nixos-aws:~/nix-party-tricks/
+
+ssh -i /tmp/nixos-ssh.pem root@nixos-aws
+\end{minted}
+\end{exampleblock}
+\end{frame}
+\begin{frame}[label={sec:orgdbf9819},fragile]{NixOS on AWS three ways - \#3}
+ \begin{exampleblock}{Now let's build the image!}
+\begin{minted}[]{shell}
+cd $PRJ_ROOT/terraform/ami
+terraform init
+terraform apply
+\end{minted}
+
+If we're lucky, it will hit the cached version of my image and spare us.
+
+If we're not, I made a trivial change at some point and never cached it, requiring a rebuild.
+
+Declarative build systems are ruthless.
+\end{exampleblock}
+\end{frame}
+\begin{frame}[label={sec:org8712c30},fragile]{NixOS on AWS three ways - \#3}
+ \begin{exampleblock}{Now we should get something special in a browser}
 \begin{verbatim}
-http://nixos-aws
+visit http://nixos-aws in a browser
 \end{verbatim}
+
+Third way done!
+\begin{center}
+\includegraphics[width=.9\linewidth]{/Users/flurie/.emacs.d/.local/cache/org-persist/23/22acb2-8b39-40aa-8418-a65ac13f4a1d-365226c1cab39c066f27d2b0d0f4f68e.jpg}
+\end{center}
+\end{exampleblock}
 \end{frame}
 
 \section{Third party trick: nix for managing lambda runtimes}
-\label{sec:orgf56d707}
-\begin{frame}[label={sec:orgca4d0ee}]{Preamble: more terraform for my lambda}
+\label{sec:orgc00200c}
+\begin{frame}[label={sec:org803d92a}]{Preamble: more terraform for my lambda}
 \end{frame}
-\begin{frame}[label={sec:orgad30650}]{Introducing a great nix feature: remote builders}
+\begin{frame}[label={sec:org1b34b6d}]{Introducing a great nix feature: remote builders}
 \end{frame}
 \end{document}

@@ -108,7 +108,6 @@
           packages.lambdaDocs = pkgs.callPackage ./nix/lambdaDocs {
             inherit (packages) nixPartyTricksDocs;
           };
-
         });
       # need _recursiveUpdate_ because otherwise the second packages attribute
       # will clobber the first one, but standard map merge uses _//_

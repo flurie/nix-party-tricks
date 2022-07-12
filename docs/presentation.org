@@ -1,7 +1,9 @@
-#+TITLE:     Nix party tricks
-#+AUTHOR:    Alexander Flurie
-#+EMAIL:     _@flurie.net
-#+DATE:      <2022-07-12 Tue>
+#+TITLE: Nix party tricks
+#+AUTHOR: Alexander Flurie
+#+EMAIL:  _@flurie.net
+#+DATE: <2022-07-12 Tue>
+#+BEAMER_HEADER: \subtitle{Building EC2s, images, and lambda packages with NixOS}
+#+BEAMER_HEADER: \institute{Pittsburgh AWS User Group}
 #+DESCRIPTION: Some party tricks you can perform with nix and AWS
 #+KEYWORDS: nix aws ec2 terraform
 #+LANGUAGE:  en
@@ -18,14 +20,53 @@
 #+LATEX_COMPILER: tectonic
 #+COLUMNS: %40ITEM %10BEAMER_env(Env) %9BEAMER_envargs(Env Args) %4BEAMER_col(Col) %10BEAMER_extra(Extra)
 #+BEAMER_THEME: metropolis
+#+latex: \metroset{block=fill}
 
 * Preamble
 ** Nix is magic
 Surprise, this is a magic show!
 
 Nix is a special kind of magic for specifying pretty much any output you could want.
-** Nothing up my sleeve
+** Nothing up my sleeve...
 Behold, a fresh VM.
+
+I am clicking through these things because I am very serious.
+** ...but cards on the table
+There's always something to install when you start.
+** For those playing along at home
+This text is expository, written for flavor and background
+*** This text highlights an important definition
+:PROPERTIES:
+:BEAMER_env: alertblock
+:END:
+Satoshi Nakamoto: last known alias of Charles Ponzi
+*** This text is instructional
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
+Green means go! Do as I say.
+* Demo Overview
+** Purpose
+- survey of a bunch of common problems and demonstrate solutions with nix
+- whirlwind tour of some great nix ecosystem tooling
+- code is public: [[https://github.com/flurie/nix-party-tricks]]
+** Let's install nix!
+*** Installing nix
+- Go to [[https://nixos.org]]
+- select *Download*
+- Follow multi-user installation instructions (unless you're on something weird like WSL)
+** And let's install some things to make our lives easier (and this demo shorter)
+*** Rosetta 2
+~softwareupdate --install-rosetta~
+*** git
+ ~nix-env -iA nixpkgs.git~
+*** cachix
+ ~nix-env -iA nixpkgs.cachix~
+*** add some stuff to ~/etc/nix/nix.conf~
+   ~experimental-features = nix-command flakes~
+   ~trusted-users = root $(whoami)~
+*** explicitly add cachix cache
+ ~cachix use flurie~
 * /Extremely/ abbreviated intro to nix
 ** Nix the First: Language
 Main features:
@@ -48,7 +89,7 @@ nixpkgs
 - Largest, most active package repository of its kind
 - Many smaller ecosystems, especially by language (2nix)
 ** Nix the Second: Package Manager (con't)
-The Dirty Secret:
+#+CAPTION: The Dirty Secret
 [[https://i.redd.it/ohbkwn9ke6q51.png]]
 ** Nix the Third: Linux Distribution
 NixOS
@@ -56,36 +97,35 @@ NixOS
 - Familiar to users of gentoo and arch
 - Adds in modules for system-level configurability
 ** Nix the Fourth: /misc/ tooling
-- home-manager (nix for $HOME)
-- nix-darwin (nix for macOS)
-- cachix (arbitrary caching for nix derivations)
-- Hercules CI (CI/CD for nix derivations)
-* Demo Overview
-** Purpose
-- survey of a bunch of common problems and demonstrate solutions with nix
-- whirlwind tour of some great nix ecosystem tooling
-- code is public
-** Let's install nix!
-- Go to [[https://nixos.org]]
-- select *Download*
-- Follow multi-user installation instructions (unless you're on something weird like WSL)
+*** Tools worth knowing
+:PROPERTIES:
+:BEAMER_env: alertblock
+:END:
+- home-manager: nix for ~$HOME~
+- nix-darwin: nix for macOS
+- cachix: arbitrary caching for nix derivations
+- Hercules CI: CI/CD for nix derivations
 * First party trick: nix for managing development environments
 ** Misc tools for environment management
+*** Tools we will use in this section
+:PROPERTIES:
+:BEAMER_env: alertblock
+:END:
 - direnv: automate environment switching in shell
 - devshell: manage all your development tools per-project with a simple configuration file
 ** Let's install direnv!
+*** Installing direnv
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
 - Go to [[https://direnv.net/#basic-installation]]
 - Follow the NixOS instructions (because I'm not installing Homebrew, boo!) for non-NixOS systems
 - Hook direnv into shell
-** Oops, we need git, too
-We /could/ install git the usual way on macOS...
-(by installing the Xcode command line tools)
-...but what if we didn't have to?
-nixpkgs to the rescue! And this time we don't even need to "install" it!
-#+begin_src shell
-nix-shell -p git
-#+end_src
-** Let's grab the code
+** Let's grab the code...
+*** Clone me on GitHub
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
 #+begin_src shell
 git clone
 https://github.com/flurie/nix-party-tricks.git
@@ -95,42 +135,76 @@ direnv holds a *lot* of power, so be careful with what you allow.
 
 Using nix with direnv provides an additional level of security.
 
-Time to take the ride.
-
+*** Time to take the ride.
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
 #+begin_src shell
 direnv allow
 #+end_src
 ** Tour our new powers
 #+ATTR_LaTeX: :width 6cm
-  #+CAPTION: I'm in devshell! I'm in normal shell!
-  [[file:homer.jpg]]
+#+CAPTION: I'm in devshell! I'm in normal shell!
+https://i.redd.it/sjxozjxz2j681.jpg
+** A note about creds
+*** Be safe
+:PROPERTIES:
+:BEAMER_env: alertblock
+:END:
+- *Never* store credentials in a long-lived plaintext config file!
+- use ~credential_process~ to grab creds safely
+#+begin_example
+# ~/.aws/credentials
+
+[default]
+credential_process = access_keys_from_csv
+#+end_example
 ** Enter AWS with train
-Set the stage for more magic
+*** Set the stage for more magic
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
 #+begin_src shell
 cp -r "$PRJ_ROOT"/support/.aws ~/.aws
 #+end_src
-Create some new creds and never have to look at them!
+*** You can try this at home, but don't leave the files sitting around.
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
 #+begin_example
-Log in to AWS
+Log in to AWS console
 
 Create new programmatic IAM credentials
 
 Download the csv to our devshell root
 #+end_example
 ** Time to test the thing out
+*** Putting it all together
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
 #+begin_src shell
 aws sts get-caller-identity
 #+end_src
 * Second party trick: nix for managing ec2s
-** Preamble: terraform to stand up the host
+** Preamble
+*** terraform to stand up the host
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
 #+begin_src shell
-# $PRJ_ROOT/terraform/ec2
+cd $PRJ_ROOT/terraform/ec2
 terraform init
 terraform apply
 #+end_src
 ** Misc tools for deployment management
-- cachix (arbitrary caching for nix derivations)
-- deploy-rs (deploy NixOS to anywhere from anywhere)
+*** Tools we will use in this section
+:PROPERTIES:
+:BEAMER_env: alertblock
+:END:
+- cachix: arbitrary caching for nix derivations
+- deploy-rs: deploy NixOS to anywhere from anywhere
+- nixos-generators: generate NixOS machine images of any kind
 ** NixOS on AWS three ways
 #1: ec2 user data
 ** NixOS on AWS three ways - #1
@@ -163,23 +237,33 @@ END
 #+end_src
 ** NixOS on AWS three ways - #1
 We can now enter the machine.
-
-Make sure to use the IP given by terraform.
-
+*** TODO terraform output into ssh config file + hosts file line?
+*** Make sure to use the IP given by terraform.
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
 #+begin_src shell
 ssh -i /tmp/nixos-ssh.pem root@{IP}
 #+end_src
 ** NixOS on AWS three ways - #1
-Let's pull down the party tricks repo here...
+*** Let's pull down the party tricks repo here as well...
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
 #+begin_src shell
 git clone
 https://github.com/flurie/nix-party-tricks.git
 #+end_src
 ** NixOS on AWS three ways - #1
-...and activate the devshell!
+*** ...and activate the devshell!
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
 #+begin_src shell
 cd nix-party-tricks && direnv allow
 #+end_src
+
+First way done!
 ** NixOS on AWS three ways
 #2: deploy-rs
 ** NixOS on AWS three ways - #2
@@ -204,14 +288,22 @@ deploy = {
 };
 #+end_src
 ** NixOS on AWS three ways - #2
-Deploying to hostname, make sure it's in our /etc/hosts
+*** Deploying to hostname, make sure it's in our /etc/hosts
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
 #+begin_src shell
 sudo echo "{IP}  nixos-aws" >> /etc/hosts
 #+end_src
 ** NixOS on AWS three ways - #2
-First deploy: "hello world"
+*** First deploy: "hello world"
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
 #+begin_src shell
-deploy .#aws.hello
+# the -s skips the checks, saving us some time
+# don't do this at home
+deploy .#aws.hello -s
 #+end_src
 ** NixOS on AWS three ways - #2
 Second deploy: NixOS system running nginx
@@ -221,26 +313,108 @@ Second deploy: NixOS system running nginx
   networking.firewall.allowedTCPPorts = [ 80 ];
 }
 #+end_src
-Let's deploy!
+*** Let's deploy!
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
 #+begin_src shell
-deploy .#aws.system
+deploy .#aws.system -s
 #+end_src
 ** NixOS on AWS three ways - #2
-Now we should get the nginx splash page in a browser
-#+begin_src
-http://nixos-aws
+*** Now we should get the nginx splash page in a browser
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
+#+begin_example
+visit http://nixos-aws in a browser
+#+end_example
+
+Second way done!
+** NixOS on AWS three ways
+ #3: nixos-generators
+** NixOS on AWS three ways #3
+#+latex: \tiny
+#+begin_src nix
+packages.x86_64-linux.awsImage = let system = "x86_64-linux";
+      in nixos-generators.nixosGenerate {
+        pkgs = nixpkgs.legacyPackages.${system};
+        modules = [
+          # new hostname for new machine
+          networking.hostName = "nixos-aws-ami";
+          # mostly stuff you've seen before...
+            services.nginx = {
+              enable = true;
+              virtualHosts.${networking.hostName} = {
+                # except now we're serving something special
+                root = "${self.packages."${system}".default}/www";
+              };
+            };
+        ];
+        format = "amazon";
+};
+#+end_src
+** NixOS on AWS three ways - #3
+Let's use our shiny new ec2  for this!
+
+*** But before we do, let's make our user creds available for the sake of simplicity.
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
+#+latex: \tiny
+#+begin_src shell
+# from our local
+scp -i /tmp/nixos-ssh.pem ./$(whoami)_accessKeys.csv \
+    root@nixos-aws:~/nix-party-tricks/
+
+ssh -i /tmp/nixos-ssh.pem root@nixos-aws
+#+end_src
+** NixOS on AWS three ways - #3
+*** Now let's build the image!
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
+#+begin_src shell
+cd $PRJ_ROOT/terraform/ami
+terraform init
+terraform apply
 #+end_src
 
+If we're lucky, it will hit the cached version of my image and spare us.
+
+If we're not, I made a trivial change at some point and never cached it, requiring a rebuild.
+
+Declarative build systems are ruthless.
+** NixOS on AWS three ways - #3
+*** Now we should get something special in a browser
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
+#+begin_example
+visit http://nixos-aws in a browser
+#+end_example
+
+Third way done!
+[[https://live.staticflickr.com/3121/2374568522_0cec8d3f2b_o_d.jpg]]
 * Third party trick: nix for managing lambda runtimes
-** Preamble: more terraform for my lambda
-** Introducing a great nix feature: remote builders
-
-
-* TODO
-** explicitly install rosetta 2 ~softwareupdate --install-rosetta~
-** explicitly install git ~nix-env -iA nixpkgs.git~
-** explicitly install cachix ~nix-env -iA nixpkgs.cachix~
-** add ~experimental-features = nix-command flakes~ to ~/etc/nix/nix.conf~
-** add ~trusted-users = root flurie~ to ~/etc/nix/nix.conf~
-** explicitly add cachix cache ~cachix use flurie~
-** add host key (maybe? or maybe not with user explicit in deploy)
+** Preamble
+*** We will have to manage some stuff by hand.
+:PROPERTIES:
+:BEAMER_env: alertblock
+:END:
+Terraform /really/ doesn't want to manage container images.
+Providers that can make it happen expect to build with docker.
+** Container image tools
+*** Tools we will use in this section
+:PROPERTIES:
+:BEAMER_env: alertblock
+:END:
+- docker-tools: nixpkgs native OCI-compatible image builder
+- colima: no-fuss container runtimes for macOS and Linux
+*** Create ECR repo
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
+#+begin_src shell
+aws ecr create-repository \
+    --repository-name nix
+#+end_src
