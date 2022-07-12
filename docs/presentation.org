@@ -483,6 +483,7 @@ pkgs.dockerTools.buildLayeredImageWithNixDb {
 :PROPERTIES:
 :BEAMER_env: exampleblock
 :END:
+#+latex: \tiny
 #+begin_src shell
 # starting on the build machine
 nix build .#packages.x86-linux.lambdaSimple
@@ -492,6 +493,9 @@ docker load < result
 #+end_src
 ** Push the image
 *** now tag and push to ECR
+:PROPERTIES:
+:BEAMER_env: exampleblock
+:END:
 #+begin_example
 scripts/tag_and_push_lambda.sh
 #+end_example
