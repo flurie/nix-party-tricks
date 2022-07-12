@@ -97,6 +97,18 @@
           # packages.${system}.default is what a flake builds when supplied
           # without an argument
           packages.default = packages.nixPartyTricksDocs;
+
+          # a very basic python lambda
+          packages.lambdaSimple = pkgs.callPackage ./nix/lambdaSimple { };
+
+          # a more substantial python lambda
+          packages.lambdaApi = pkgs.callPackage ./nix/lambdaApi { };
+
+          # a most substantial python lambda
+          packages.lambdaDocs = pkgs.callPackage ./nix/lambdaDocs {
+            inherit (packages) nixPartyTricksDocs;
+          };
+
         });
       # need _recursiveUpdate_ because otherwise the second packages attribute
       # will clobber the first one, but standard map merge uses _//_

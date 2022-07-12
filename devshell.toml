@@ -12,6 +12,10 @@ help = "deploy Nix anywhere"
 name = "access_keys_from_csv"
 command = "${PRJ_ROOT}/scripts/access_keys_from_csv.sh"
 help = "credential process helper for aws"
+category = "helpers"
+
+[[commands]]
+package = "docker"
 
 [[env]]
 name = "AWS_USERNAME"
